@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option optimize_for = SPEED;
+
+package Customer;
+
+import "google/api/annotations.proto";
+
+message CustomerInfo {
+  uint32 i_customer = 1;
+  string id = 2;
+  string password = 3;
+}
+
+message CustomerInfoRequest {
+  uint32 i_customer = 1;
+}
+
+message CustomerInfoResponse {
+  CustomerInfo info = 1;
+}
+
+service CustomerApi {
+    rpc GetCustomerInfo(CustomerInfoRequest) returns (CustomerInfoResponse) {
+    // curl -ki -XGET https://localhost:11000/Customer/get_customer_info/3
+        option (google.api.http) = {
+            get: "/Customer/get_customer_info/{i_customer}"
+        };
+    }
+}
