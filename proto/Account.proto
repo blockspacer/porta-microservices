@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option optimize_for = SPEED;
+
+package Account;
+
+import "google/api/annotations.proto";
+
+message AccountInfo {
+  uint32 i_account = 1;
+  string id = 2;
+  string password = 3;
+}
+
+message AccountInfoRequest {
+  uint32 i_account = 1;
+}
+
+message AccountInfoResponse {
+  AccountInfo info = 1;
+}
+
+service AccountApi {
+    rpc GetAccountInfo(AccountInfoRequest) returns (AccountInfoResponse) {
+    // curl -ki -XGET https://localhost:11000/Account/get_account_info/3
+        option (google.api.http) = {
+            get: "/Account/get_account_info/{i_account}"
+        };
+    }
+}

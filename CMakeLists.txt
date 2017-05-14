@@ -26,3 +26,4 @@ set(PROTOS  ${CMAKE_CURRENT_SOURCE_DIR}/proto)
 
 add_subdirectory( googleapi )
 add_subdirectory( src/customer )
+add_subdirectory( src/account )
