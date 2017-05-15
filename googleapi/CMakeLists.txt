@@ -2,7 +2,7 @@ project(porta-googleapi)
 
 add_compile_options(-std=c++11 -O3)
 
-set(GOOGLE_API_PROTO_DIR "/home/porta-one/yakut/micro-services/googleapis" CACHE INTERNAL "GOOGLE_API_PROTO_DIR")
+set(GOOGLE_API_PROTO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/googleapis CACHE INTERNAL "GOOGLE_API_PROTO_DIR")
 set(GOOGLE_API_PROTO_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "GOOGLE_API_PROTO_INCLUDE_DIR")
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
