@@ -18,11 +18,11 @@ import (
 )
 
 var (
-	bindAddr             = flag.String("bind_address", "etsys.intra:11000", "Account endpoint")
-	endpointAccount      = flag.String("account_endpoint", "etsys.intra:9091", "Account endpoint")
-	endpointCustomer     = flag.String("customer_endpoint", "etsys.intra:9092", "Customer endpoint")
-	clientCertFile       = flag.String("cert_file", "/porta_var/certs/etsys.intra.crt", "SSL certificate file")
-	clientKeyFile        = flag.String("key_file", "/porta_var/certs/etsys.intra.key", "SSL key file")
+	bindAddr             = flag.String("bind_address", "0.0.0.0:11000", "Account endpoint")
+	endpointAccount      = flag.String("account_endpoint", "service-account.172.16.99.106.xip.io:443", "Account endpoint")
+	endpointCustomer     = flag.String("customer_endpoint", "service-customer.172.16.99.106.xip.io:443", "Customer endpoint")
+	clientCertFile       = flag.String("cert_file", "./etsys.intra.crt", "SSL certificate file")
+	clientKeyFile        = flag.String("key_file", "./etsys.intra.key", "SSL key file ")
 	clientTransportCreds credentials.TransportCredentials
 )
 

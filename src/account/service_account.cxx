@@ -20,8 +20,8 @@ using Account::AccountInfoResponse;
 using namespace std;
 
 DEFINE_string(bind_address, "0.0.0.0:9091", "Account service bind address");
-DEFINE_string(cert_file, "/porta_var/certs/etsys.intra.crt", "SSL certificate file");
-DEFINE_string(key_file, "/porta_var/certs/etsys.intra.key", "SSL key file");
+DEFINE_string(cert_file, "./etsys.intra.crt", "SSL certificate file");
+DEFINE_string(key_file, "./etsys.intra.key", "SSL key file");
 
 // Logic and data behind the server's behavior.
 class AccountServiceImpl final :
