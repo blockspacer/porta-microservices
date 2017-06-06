@@ -1,6 +1,14 @@
 package main
 
-// Usage rpc-proxy --account_endpoint=etsys.intra:9091 --customer_endpoint=etsys.intra:9092
+// Usage:
+// rpc-proxy [OPTIONS]
+// Possible OPTIONS:
+// --bind_address=<IP:port> - defines address that is used for incoming request processing. Default: 0.0.0.0:11000
+// --cert_file=<file> - defines SSL certificate file
+// -- key_file=<file> - defines SSL key file
+// --account_endpoint=<IP:port> - defines account service address. Default: service-account.172.16.99.106.xip.io:443
+// --customer_endpoint=<IP:port> - defines customer service address. Default: service-customer.172.16.99.106.xip.io:443
+
 import (
 	"crypto/tls"
 	"flag"
@@ -22,7 +30,7 @@ var (
 	endpointAccount      = flag.String("account_endpoint", "service-account.172.16.99.106.xip.io:443", "Account endpoint")
 	endpointCustomer     = flag.String("customer_endpoint", "service-customer.172.16.99.106.xip.io:443", "Customer endpoint")
 	clientCertFile       = flag.String("cert_file", "./etsys.intra.crt", "SSL certificate file")
-	clientKeyFile        = flag.String("key_file", "./etsys.intra.key", "SSL key file ")
+	clientKeyFile        = flag.String("key_file", "./etsys.intra.key", "SSL key file")
 	clientTransportCreds credentials.TransportCredentials
 )
 
