@@ -64,5 +64,5 @@ done;
 echo "STATUS: Generating reverse proxy"
 cp -R $src_proxy_dir/* $dst_proxy_dir
 cd $dst_proxy_dir
-go get .
+CGO_ENABLED=0 GOOS=linux go get -a .
 echo "STATUS: Generating reverse proxy - complete"
