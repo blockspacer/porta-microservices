@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: List
+items:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: service-customer-deploy
+    labels:
+      app: service-customer
+  spec:
+    strategy:
+      type: Rolling
+      rollingParams:
+        updatePeriodSeconds: 1
+        intervalSeconds: 1
+        timeoutSeconds: 600
+        maxUnavailable: 25%
+        maxSurge: 25%
+      resources: {}
+      activeDeadlineSeconds: 21600
+    triggers:
+      - type: ConfigChange
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - service-customer-container
+          from:
+            kind: ImageStreamTag
+            name: 'service-customer:latest'
+    replicas: 1
+    test: false
+    selector:
+      app: service-customer
+      deploymentconfig: service-customer-deploy
+    template:
+      metadata:
+        labels:
+          app: service-customer
+          deploymentconfig: service-customer-deploy
+      spec:
+        containers:
+          - name: service-customer-container
+            image: maxkondr/service-customer:latest
+            ports:
+              - containerPort: 9092
+                protocol: TCP
+            terminationMessagePath: /dev/termination-log
+            imagePullPolicy: Always
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirst
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: service-customer-image-stream
+  spec:
+    dockerImageRepository: maxkondr/service-customer
+    tags:
+    - from:
+        kind: DockerImage
+        name: maxkondr/service-customer
+      name: latest
+      importPolicy:
+        scheduled: true
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: service-customer-service
+    labels:
+      app: service-customer
+  spec:
+    ports:
+      - name: 9092-tcp
+        protocol: TCP
+        port: 9092
+        targetPort: 9092
+    selector:
+      app: service-customer
+      deploymentconfig: service-customer-deploy
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: service-customer-route
+  spec:
+    host: service-customer.172.16.99.106.xip.io
+    to:
+      kind: Service
+      name: service-customer-service
+      weight: 100
+    port:
+      targetPort: 9092-tcp
+    tls:
+      termination: passthrough
+
+
