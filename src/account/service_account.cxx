@@ -2,6 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <cstdlib>
 
 #include "Account.grpc.pb.h"
 #include "Account.pb.h"
@@ -29,11 +30,17 @@ class AccountServiceImpl final :
 {
     Status
     GetAccountInfo(ServerContext *context, const AccountInfoRequest *request,
-                   AccountInfoResponse *reply) override
+                   grpc::ServerWriter<AccountInfoResponse>* writer) override final
     {
-        reply->mutable_info()->set_id(string("Hello ") + std::to_string(request->i_account()));
-        reply->mutable_info()->set_password("123test");
-        reply->mutable_info()->set_i_account(request->i_account());
+        // for(auto i =0; i<100000; ++i)
+        // {
+            AccountInfoResponse reply;
+            reply.mutable_info()->set_id(string("Hello ").append(std::to_string(request->i_account())
+                .append(" from ").append(to_string(1)).append(getenv("HOSTNAME"))));
+            reply.mutable_info()->set_password("123test");
+            reply.mutable_info()->set_i_account(request->i_account());
+            writer->Write(reply);
+        // }
         return Status::OK;
     }
 };
@@ -59,6 +66,7 @@ RunServer()
     // Listen on the given address without any authentication mechanism.
     ServerBuilder builder;
     builder.AddListeningPort(FLAGS_bind_address, grpc::SslServerCredentials(sslOps));
+    // builder.AddListeningPort(FLAGS_bind_address, grpc::InsecureServerCredentials());
     // Register "service" as the instance through which we'll communicate with
     // clients. In this case it corresponds to an *synchronous* service.
     AccountServiceImpl service;

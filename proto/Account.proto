@@ -21,7 +21,7 @@ message AccountInfoResponse {
 }
 
 service AccountApi {
-    rpc GetAccountInfo(AccountInfoRequest) returns (AccountInfoResponse) {
+    rpc GetAccountInfo(AccountInfoRequest) returns (stream AccountInfoResponse) {
     // curl -ki -XGET https://localhost:11000/Account/get_account_info/3
         option (google.api.http) = {
             get: "/Account/get_account_info/{i_account}"
