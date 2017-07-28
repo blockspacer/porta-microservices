@@ -27,8 +27,8 @@ import (
 
 var (
 	bindAddr             = flag.String("bind_address", "0.0.0.0:11000", "Account endpoint")
-	endpointAccount      = flag.String("account_endpoint", "service-account.172.16.99.106.xip.io:443", "Account endpoint")
-	endpointCustomer     = flag.String("customer_endpoint", "service-customer.172.16.99.106.xip.io:443", "Customer endpoint")
+	endpointAccount      = flag.String("account_endpoint", "service-account:9091", "Account endpoint")
+	endpointCustomer     = flag.String("customer_endpoint", "service-customer:9092", "Customer endpoint")
 	clientCertFile       = flag.String("cert_file", "./etsys.intra.crt", "SSL certificate file")
 	clientKeyFile        = flag.String("key_file", "./etsys.intra.key", "SSL key file")
 	clientTransportCreds credentials.TransportCredentials
@@ -59,7 +59,8 @@ func run() error {
 	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(clientTransportCreds),
-		grpc.WithTimeout(time.Millisecond * 100),
+		// grpc.WithInsecure(),
+		grpc.WithTimeout(time.Millisecond * 3000),
 		grpc.FailOnNonTempDialError(true),
 		grpc.WithBlock(),
 	}
