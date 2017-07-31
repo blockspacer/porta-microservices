@@ -1,0 +1,34 @@
+#cloud-config
+ssh_authorized_keys:
+ - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD4afNGl+DDb46pld2dIXqnZ131N4ng+EE7kGtN5xK837hIvHdiJVojj0LtFA1urencIF+e/hbBaFd7g73P7Od+0JY2Lsfvs+Zb4KH6Fora97z/OYHV2ymrs1jcPHRlAv5OvMXJpstAPj1OSupi26+HASlLuQE3Qo+PBBVw/hJB8svgmxQY8Sd0ebeEgzsdzMo8vD8kENjosCmw0L6KAce0weS6rCvDCydTqcwSwCYaBa4PhyW+kJwsmIHNAs1VqqAZu5VLDQ7rDKC08RArIt/NEcXBI3S9UDHVNZFj+Yal/1ojKKSDACAb4xtSJh3oJqG9eY+BQqI9ovT1KPVzFyFV
+hostname: %HOSTNAME%
+coreos:
+  units:
+    - name: static.network
+      content: |
+          [Match]
+          Name=eth0
+
+          [Network]
+          DHCP=no
+          Address=10.16.99.%IP%/24
+          Gateway=10.16.99.1
+          DNS=8.8.8.8
+      command: start
+    - name: etcd2.service
+      command: start
+    - name:  systemd-networkd.service
+      command: restart
+  etcd2:
+    advertise-client-urls: http://10.16.99.%IP%:2379
+    initial-advertise-peer-urls: http://10.16.99.%IP%:2380
+    listen-client-urls: http://0.0.0.0:2379,http://0.0.0.0:4001
+    listen-peer-urls: http://0.0.0.0:2380
+    discovery: %DISCOVERY%
+
+users:
+ - name: "yakut"
+   passwd: "$1$ojO5Ayqb$Mqoqyy3HNombN5PITC31P1"
+   groups:
+     - "sudo"
+
