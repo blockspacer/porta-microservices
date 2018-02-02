@@ -1,0 +1,8 @@
+# create VM
+openstack server create --user-data ./cloud-conf.ign --image CoreOS --flavor m1.small --config-drive True --min 1  --nic port-id=master-1-port --key-name ssh-atomic master-1
+
+# assign floating IP
+SERVER_ID=$(openstack server list -f value | awk -p '{print $1}') && openstack floating ip set --port $(openstack port list -f value --server ${SERVER_ID} | awk -p '{print $1}') dd90cb17-6fe6-4c6f-86b0-7d9724dca6e1
+
+# delete VM
+openstack server delete $(openstack server list -f value | awk -p '{print $1}')
