@@ -1,0 +1,8 @@
+# ========================================================
+# OpenStack options
+
+# Worker private IP (internal OpenStack network)
+WORKER_PRIVATE_IPV4="10.16.50.5"
+
+# Worker node hostname. Can be internal
+WORKER_PRIVATE_HOSTNAME="worker-2"
