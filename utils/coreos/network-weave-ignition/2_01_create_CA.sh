@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-if [ ! -e ./env.conf -o ! -e worker-env.conf]; then 
-    echo "ERROR: env.conf or worker-env.conf is missed"
+if [ ! -e ./master-env.conf -o ! -e worker-env.conf]; then 
+    echo "ERROR: master-env.conf or worker-env.conf is missed"
     exit 1
 fi
 
-source ./env.conf
+source ./master-env.conf
 source ./worker-env.conf
 
 CWD=$(pwd)
