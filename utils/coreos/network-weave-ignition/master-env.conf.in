@@ -1,7 +1,7 @@
 # ========================================================
 # Etcd options
 
-# Discrovery token that will be used by new Etcd node
+# Discovery token that will be used by new Etcd node
 # to join existing cluster
 ETCD_DISCOVERY_TOKEN="etcd-token"
 
@@ -36,6 +36,23 @@ K8S_IMAGE_TAG="v1.9.2"
 
 # Kubelet inage tag
 KUBELET_IMAGE_TAG="v1.9.2_coreos.0"
+
+# ========================================================
+# Kubernetes Bootstrap options
+
+# NOTE: The options below should be generated only once
+# and then used for botstraping all nodes in cluster.
+# DO NOT LOSE these values!
+
+# Public part of bootstrap token
+# Use this cmd for generating:
+# openssl rand -hex 3
+K8S_TOKEN_PUB="f188bc"
+
+# Private part of bootstrap token
+# Use this cmd for generating:
+# openssl rand -hex 16
+K8S_TOKEN_SECRET="abc4132e7cdcbd42"
 
 # ========================================================
 # OpenStack options
