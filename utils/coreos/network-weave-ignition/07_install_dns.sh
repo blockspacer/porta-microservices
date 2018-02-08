@@ -8,12 +8,12 @@ set -e
 # kubectl run -it --rm --restart=Never --image=infoblox/dnstools:latest dnstools
 # then "host kubernetes"
 
-if [ ! -e ./env.conf ]; then 
-    echo "ERROR: env.conf is missed"
+if [ ! -e ./master-env.conf ]; then 
+    echo "ERROR: master-env.conf is missed"
     exit 1
 fi
 
-source ./env.conf
+source ./master-env.conf
 
 # create service account for dns addon
 kubectl create serviceaccount coredns -n kube-system

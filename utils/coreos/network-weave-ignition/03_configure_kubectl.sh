@@ -6,12 +6,12 @@ set -e
 # then configures it to use with particular cluster usage (defined in MASTER_PUBLIC_HOSTNAME)
 # and assignes certificates that were generated for this particular cluster earlier
 
-if [ ! -e ./env.conf ]; then 
-    echo "ERROR: env.conf is missed"
+if [ ! -e ./master-env.conf ]; then 
+    echo "ERROR: master-env.conf is missed"
     exit 1
 fi
 
-source ./env.conf
+source ./master-env.conf
 
 CWD=$(pwd)
 CA_CERT="${CWD}/CA/ca.crt"
@@ -30,13 +30,13 @@ clusters:
 - cluster:
     certificate-authority-data: $(cat ${CA_CERT} | base64 | tr -d '\r\n')
     server: https://${MASTER_PUBLIC_HOSTNAME}:6443
-  name: kubernetes
+  name: ${K8S_CLUSTER_NAME}
 contexts:
 - context:
-    cluster: kubernetes
+    cluster: ${K8S_CLUSTER_NAME}
     user: kubernetes-admin
-  name: kubernetes-admin@kubernetes
-current-context: kubernetes-admin@kubernetes
+  name: kubernetes-admin@${K8S_CLUSTER_NAME}
+current-context: kubernetes-admin@${K8S_CLUSTER_NAME}
 kind: Config
 preferences: {}
 users:

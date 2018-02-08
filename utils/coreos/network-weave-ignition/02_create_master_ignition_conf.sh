@@ -2,12 +2,12 @@
 
 set -e 
 
-if [ ! -e ./env.conf ]; then 
-    echo "ERROR: env.conf is missed"
+if [ ! -e ./master-env.conf ]; then 
+    echo "ERROR: master-env.conf is missed"
     exit 1
 fi
 
-source ./env.conf
+source ./master-env.conf
 
 if [ ! -e ./ct ]; then
     curl -L https://github.com/coreos/container-linux-config-transpiler/releases/download/v0.6.0/ct-v0.6.0-x86_64-unknown-linux-gnu -o ./ct
@@ -15,8 +15,8 @@ if [ ! -e ./ct ]; then
 fi
 
 CWD=$(pwd)
-CLOUD_CONF=$CWD/cloud-conf.yaml
-IGNITION_CONF=$CWD/cloud-conf.ign
+CLOUD_CONF=$CWD/cloud-conf-master.yaml
+IGNITION_CONF=$CWD/cloud-conf-master.ign
 
 # add general stuff
 cat << EOF > $CLOUD_CONF
@@ -114,7 +114,7 @@ EOF
 
 # add config for controller-manager
 cat << EOF >> $CLOUD_CONF
-    - path: /etc/kubernetes/templates/controller-manager.conf.tmpl
+    - path: /etc/kubernetes/controller-manager.conf
       filesystem: root
       mode: 0600
       contents:
@@ -123,14 +123,14 @@ cat << EOF >> $CLOUD_CONF
           clusters:
           - cluster:
               certificate-authority: /etc/kubernetes/pki/ca.crt
-              server: https://\$COREOS_OPENSTACK_IPV4_LOCAL:6443
-            name: kubernetes
+              server: https://${MASTER_PRIVATE_IPV4}:6443
+            name: ${K8S_CLUSTER_NAME}
           contexts:
           - context:
-              cluster: kubernetes
+              cluster: ${K8S_CLUSTER_NAME}
               user: system:kube-controller-manager
-            name: system:kube-controller-manager@kubernetes
-          current-context: system:kube-controller-manager@kubernetes
+            name: system:kube-controller-manager@${K8S_CLUSTER_NAME}
+          current-context: system:kube-controller-manager@${K8S_CLUSTER_NAME}
           kind: Config
           preferences: {}
           users:
@@ -142,7 +142,7 @@ EOF
 
 # add config for kubelet
 cat << EOF >> $CLOUD_CONF
-    - path: /etc/kubernetes/templates/kubelet.conf.tmpl
+    - path: /etc/kubernetes/kubelet.conf
       filesystem: root
       mode: 0600
       contents:
@@ -151,14 +151,14 @@ cat << EOF >> $CLOUD_CONF
           clusters:
           - cluster:
               certificate-authority: /etc/kubernetes/pki/ca.crt
-              server: https://\$COREOS_OPENSTACK_IPV4_LOCAL:6443
-            name: kubernetes
+              server: https://${MASTER_PRIVATE_IPV4}:6443
+            name: ${K8S_CLUSTER_NAME}
           contexts:
           - context:
-              cluster: kubernetes
+              cluster: ${K8S_CLUSTER_NAME}
               user: system:node:${MASTER_PUBLIC_HOSTNAME}
-            name: system:node:${MASTER_PUBLIC_HOSTNAME}@kubernetes
-          current-context: system:node:${MASTER_PUBLIC_HOSTNAME}@kubernetes
+            name: system:node:${MASTER_PUBLIC_HOSTNAME}@${K8S_CLUSTER_NAME}
+          current-context: system:node:${MASTER_PUBLIC_HOSTNAME}@${K8S_CLUSTER_NAME}
           kind: Config
           preferences: {}
           users:
@@ -170,7 +170,7 @@ EOF
 
 # add config for scheduler
 cat << EOF >> $CLOUD_CONF
-    - path: /etc/kubernetes/templates/scheduler.conf.tmpl
+    - path: /etc/kubernetes/scheduler.conf
       filesystem: root
       mode: 0600
       contents:
@@ -179,14 +179,14 @@ cat << EOF >> $CLOUD_CONF
           clusters:
           - cluster:
               certificate-authority: /etc/kubernetes/pki/ca.crt
-              server: https://\$COREOS_OPENSTACK_IPV4_LOCAL:6443
-            name: kubernetes
+              server: https://${MASTER_PRIVATE_IPV4}:6443
+            name: ${K8S_CLUSTER_NAME}
           contexts:
           - context:
-              cluster: kubernetes
+              cluster: ${K8S_CLUSTER_NAME}
               user: system:kube-scheduler
-            name: system:kube-scheduler@kubernetes
-          current-context: system:kube-scheduler@kubernetes
+            name: system:kube-scheduler@${K8S_CLUSTER_NAME}
+          current-context: system:kube-scheduler@${K8S_CLUSTER_NAME}
           kind: Config
           preferences: {}
           users:
@@ -198,7 +198,7 @@ EOF
 
 # add kubernets manifest
 cat << EOF >> $CLOUD_CONF
-    - path: /etc/kubernetes/templates/kube-apiserver.yaml.tmpl
+    - path: /etc/kubernetes/manifests/kube-apiserver.yaml
       filesystem: root
       mode: 0600
       contents:
@@ -220,7 +220,7 @@ cat << EOF >> $CLOUD_CONF
               - --tls-private-key-file=/etc/kubernetes/pki/apiserver.key
               - --admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota
               - --allow-privileged=true
-              - --advertise-address=\$COREOS_OPENSTACK_IPV4_LOCAL
+              - --advertise-address=${MASTER_PRIVATE_IPV4}
               - --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt
               - --secure-port=6443
               - --service-account-key-file=/etc/kubernetes/pki/sa.pub
@@ -237,7 +237,7 @@ cat << EOF >> $CLOUD_CONF
               livenessProbe:
                 failureThreshold: 8
                 httpGet:
-                  host: \$COREOS_OPENSTACK_IPV4_LOCAL
+                  host: ${MASTER_PRIVATE_IPV4}
                   port: 6443
                   path: /healthz
                   scheme: HTTPS
@@ -495,10 +495,6 @@ systemd:
 
         [Service]
         EnvironmentFile=/run/metadata/coreos
-        ExecStartPre=/bin/bash -c "envsubst '\$COREOS_OPENSTACK_IPV4_LOCAL' < /etc/kubernetes/templates/controller-manager.conf.tmpl > /etc/kubernetes/controller-manager.conf"
-        ExecStartPre=/bin/bash -c "envsubst '\$COREOS_OPENSTACK_IPV4_LOCAL \$COREOS_OPENSTACK_HOSTNAME' < /etc/kubernetes/templates/kubelet.conf.tmpl > /etc/kubernetes/kubelet.conf"
-        ExecStartPre=/bin/bash -c "envsubst '\$COREOS_OPENSTACK_IPV4_LOCAL' < /etc/kubernetes/templates/scheduler.conf.tmpl > /etc/kubernetes/scheduler.conf"
-        ExecStartPre=/bin/bash -c "envsubst '\$COREOS_OPENSTACK_IPV4_LOCAL' < /etc/kubernetes/templates/kube-apiserver.yaml.tmpl > /etc/kubernetes/manifests/kube-apiserver.yaml"
         ExecStartPre=/bin/bash -c "cat /run/metadata/coreos | grep HOSTNAME | awk -F '=' -p '{print \$2}' > /etc/hostname"
         ExecStart=/bin/bash -c "hostname -F /etc/hostname"
 

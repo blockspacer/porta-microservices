@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-if [ ! -e ./env.conf ]; then 
-    echo "ERROR: env.conf is missed"
+if [ ! -e ./master-env.conf ]; then 
+    echo "ERROR: master-env.conf is missed"
     exit 1
 fi
 
-source ./env.conf
+source ./master-env.conf
 
 # create service account for kube-proxy
 kubectl create serviceaccount kube-proxy -n kube-system
