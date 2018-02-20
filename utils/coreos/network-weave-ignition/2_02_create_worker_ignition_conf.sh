@@ -15,7 +15,7 @@ if [ ! -e ./ct ]; then
     chmod +x ./ct
 fi
 
-CWD=$(pwd)
+CWD=$(dirname $(readlink -f "$0"))
 CLOUD_CONF=$CWD/cloud-conf-worker-${WORKER_PRIVATE_IPV4}.yaml
 IGNITION_CONF=$CWD/cloud-conf-worker-${WORKER_PRIVATE_IPV4}.ign
 

@@ -8,7 +8,7 @@ fi
 
 source ./master-env.conf
 
-CWD=$(pwd)
+CWD=$(dirname $(readlink -f "$0"))
 CA_LOCATION="${CWD}/CA"
 ETCD_DIR="${CA_LOCATION}/etcd"
 API_DIR="${CA_LOCATION}/apiserver"

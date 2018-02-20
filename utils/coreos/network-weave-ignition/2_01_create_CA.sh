@@ -9,7 +9,7 @@ fi
 source ./master-env.conf
 source ./worker-env.conf
 
-CWD=$(pwd)
+CWD=$(dirname $(readlink -f "$0"))
 CA_LOCATION="${CWD}/CA"
 WORKER_DIR="${CA_LOCATION}/worker-${WORKER_PRIVATE_IPV4}"
 KUBELET_DIR="${WORKER_DIR}/kubelet"

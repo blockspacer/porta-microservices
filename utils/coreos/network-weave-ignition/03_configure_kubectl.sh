@@ -13,7 +13,7 @@ fi
 
 source ./master-env.conf
 
-CWD=$(pwd)
+CWD=$(dirname $(readlink -f "$0"))
 CA_CERT="${CWD}/CA/ca.crt"
 ADMIN_CERT="${CWD}/CA/admin/admin.crt"
 ADMIN_KEY="${CWD}/CA/admin/admin.key"

@@ -10,7 +10,7 @@ fi
 
 source ./master-env.conf
 
-CWD=$(pwd)
+CWD=$(dirname $(readlink -f "$0"))
 CA_CERT="${CWD}/CA/ca.crt"
 
 kubectl -n kube-system create secret generic bootstrap-token-${K8S_TOKEN_PUB} \
