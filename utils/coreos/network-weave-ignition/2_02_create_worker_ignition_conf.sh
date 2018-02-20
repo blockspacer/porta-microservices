@@ -209,7 +209,8 @@ systemd:
           --cni-conf-dir=/etc/cni/net.d \
           --cni-bin-dir=/opt/cni/bin \
           --cadvisor-port=0 \
-          --hostname-override=${WORKER_PRIVATE_HOSTNAME}
+          --hostname-override=${WORKER_PRIVATE_HOSTNAME} \
+          --authentication-token-webhook
         ExecStop=-/usr/bin/rkt stop --uuid-file=/var/run/kubelet-pod.uuid
         Restart=always
         RestartSec=10

@@ -89,7 +89,40 @@ $(cat $CWD/CA/service-account/sa.key | sed 's/^/          /')
       contents:
         inline: |
 $(cat $CWD/CA/service-account/sa.pub | sed 's/^/          /')
+EOF
 
+# add certificates for etcd
+cat << EOF >> $CLOUD_CONF
+    - path: /var/lib/etcd/ssl/etcd.key
+      filesystem: root
+      mode: 0600
+      user:
+        name: etcd
+      group:
+        name: etcd
+      contents:
+        inline: |
+$(cat $CWD/CA/etcd/etcd.key | sed 's/^/          /')
+    - path: /var/lib/etcd/ssl/etcd.crt
+      filesystem: root
+      mode: 0600
+      user:
+        name: etcd
+      group:
+        name: etcd
+      contents:
+        inline: |
+$(cat $CWD/CA/etcd/etcd.crt | sed 's/^/          /')
+    - path: /var/lib/etcd/ssl/ca.crt
+      filesystem: root
+      mode: 0600
+      user:
+        name: etcd
+      group:
+        name: etcd
+      contents:
+        inline: |
+$(cat $CWD/CA/ca.crt | sed 's/^/          /')
 EOF
 
 # add kubernets network config
@@ -231,7 +264,10 @@ cat << EOF >> $CLOUD_CONF
               - --insecure-port=0
               - --kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key
               - --authorization-mode=Node,RBAC
-              - --etcd-servers=http://127.0.0.1:2379
+              - --etcd-servers=https://${MASTER_PRIVATE_IPV4}:2379
+              - --etcd-cafile=/etc/kubernetes/pki/ca.crt
+              - --etcd-certfile=/var/lib/etcd/ssl/etcd.crt
+              - --etcd-keyfile=/var/lib/etcd/ssl/etcd.key
               - --tls-ca-file=/etc/kubernetes/pki/ca.crt
               image: gcr.io/google_containers/kube-apiserver-amd64:${K8S_IMAGE_TAG}
               livenessProbe:
@@ -257,6 +293,9 @@ cat << EOF >> $CLOUD_CONF
               - mountPath: /etc/ssl/certs
                 name: ca-certs
                 readOnly: true
+              - mountPath: /var/lib/etcd/ssl/
+                name: etcd-ssl
+                readOnly: true
             hostNetwork: true
             volumes:
             - hostPath:
@@ -271,6 +310,9 @@ cat << EOF >> $CLOUD_CONF
                 path: /etc/pki
                 type: DirectoryOrCreate
               name: ca-certs-etc-pki
+            - hostPath:
+                path: /var/lib/etcd/ssl/
+              name: etcd-ssl
     - path: /etc/kubernetes/manifests/kube-controller-manager.yaml
       filesystem: root
       mode: 0600
@@ -295,18 +337,19 @@ cat << EOF >> $CLOUD_CONF
               - --service-account-private-key-file=/etc/kubernetes/pki/sa.key
               - --cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt
               - --cluster-signing-key-file=/etc/kubernetes/pki/ca.key
-              - --address=127.0.0.1
+              - --address=${MASTER_PRIVATE_IPV4}
               - --leader-elect=true
               - --kubeconfig=/etc/kubernetes/controller-manager.conf
               - --root-ca-file=/etc/kubernetes/pki/ca.crt
               - --allocate-node-cidrs=true
               - --cluster-cidr=${K8S_POD_NETWORK}
               - --node-cidr-mask-size=16
+              - --service-cluster-ip-range=${K8S_SERVICE_NETWORK}
               image: gcr.io/google_containers/kube-controller-manager-amd64:${K8S_IMAGE_TAG}
               livenessProbe:
                 failureThreshold: 8
                 httpGet:
-                  host: 127.0.0.1
+                  host: ${MASTER_PRIVATE_IPV4}
                   path: /healthz
                   port: 10252  # Note: Using default port. Update if --port option is set differently.
                   scheme: HTTP
@@ -366,14 +409,14 @@ cat << EOF >> $CLOUD_CONF
             containers:
             - command:
               - kube-scheduler
-              - --address=127.0.0.1
+              - --address=${MASTER_PRIVATE_IPV4}
               - --leader-elect=true
               - --kubeconfig=/etc/kubernetes/scheduler.conf
               image: gcr.io/google_containers/kube-scheduler-amd64:${K8S_IMAGE_TAG}
               livenessProbe:
                 failureThreshold: 8
                 httpGet:
-                  host: 127.0.0.1
+                  host: ${MASTER_PRIVATE_IPV4}
                   path: /healthz
                   port: 10251  # Note: Using default port. Update if --port option is set differently.
                   scheme: HTTP
@@ -477,7 +520,8 @@ systemd:
           --cni-conf-dir=/etc/cni/net.d \
           --cni-bin-dir=/opt/cni/bin \
           --cadvisor-port=0 \
-          --hostname-override=${MASTER_PUBLIC_HOSTNAME}
+          --hostname-override=${MASTER_PUBLIC_HOSTNAME} \
+          --authentication-token-webhook
         ExecStop=-/usr/bin/rkt stop --uuid-file=/var/run/kubelet-pod.uuid
         Restart=always
         RestartSec=10
@@ -509,14 +553,22 @@ etcd:
   version:                     3.2.9
   name:                        "{HOSTNAME}"
   data_dir:                    /var/lib/etcd
-  listen_client_urls:          http://127.0.0.1:2379
-  advertise_client_urls:       http://127.0.0.1:2379
-  initial_advertise_peer_urls: http://127.0.0.1:2380
-  listen_peer_urls:            http://127.0.0.1:2380
+  listen_client_urls:          https://${MASTER_PRIVATE_IPV4}:2379
+  advertise_client_urls:       https://${MASTER_PRIVATE_IPV4}:2379
+  initial_advertise_peer_urls: https://${MASTER_PRIVATE_IPV4}:2380
+  listen_peer_urls:            https://${MASTER_PRIVATE_IPV4}:2380
   initial_cluster_token:       ${ETCD_DISCOVERY_TOKEN}
-  initial_cluster:             "{HOSTNAME}=http://127.0.0.1:2380"
+  initial_cluster:             "{HOSTNAME}=https://${MASTER_PRIVATE_IPV4}:2380"
   initial_cluster_state:       new
   auto_compaction_retention:   1
+  client_cert_auth:            true
+  peer_client_cert_auth:       true
+  cert_file:                   /var/lib/etcd/ssl/etcd.crt
+  key_file:                    /var/lib/etcd/ssl/etcd.key
+  peer_cert_file:              /var/lib/etcd/ssl/etcd.crt
+  peer_key_file:               /var/lib/etcd/ssl/etcd.key
+  trusted_ca_file:             /var/lib/etcd/ssl/ca.crt
+  peer_trusted_ca_file:        /var/lib/etcd/ssl/ca.crt
 EOF
 
 # add docker options

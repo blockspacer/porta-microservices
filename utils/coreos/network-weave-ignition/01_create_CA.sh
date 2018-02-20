@@ -15,7 +15,7 @@ API_DIR="${CA_LOCATION}/apiserver"
 API_KUBELET_CLIENT_DIR="${CA_LOCATION}/apiserver-kubelet-client"
 KUBELET_DIR="${CA_LOCATION}/kubelet"
 HELM_DIR="${CA_LOCATION}/helm"
-DASHBOARD_DIR="${CA_LOCATION}/dashboard"
+MONITOR_DIR="${CA_LOCATION}/monitoring"
 CONTR_MANAGER_DIR="${CA_LOCATION}/controller-manager"
 SCHEDULER_DIR="${CA_LOCATION}/scheduler"
 ADMIN_DIR="${CA_LOCATION}/admin"
@@ -31,7 +31,7 @@ function cert_ca {
 
     openssl genrsa -out ca.key 2048
     # openssl req -x509 -new -nodes -key ca.key -subj "/CN=cluster-admin/O=system:masters" -days 10000 -out ca.crt
-    openssl req -x509 -new -nodes -key ca.key -subj "/CN=kubernetes" -days 10000 -out ca.crt
+    openssl req -x509 -new -nodes -key ca.key -subj "/CN=kubernetes/O=PortaOne, Inc" -days 10000 -out ca.crt
 }
 # ================================================================================
 
@@ -343,45 +343,45 @@ function cert_service_account {
 # }
 # ================================================================================
 
-# function cert_dashboard {
-#     echo "Creating certificates for Dashboard"
-#     mkdir -p ${DASHBOARD_DIR} || true
-#     cd ${DASHBOARD_DIR}
+function cert_monitor {
+    echo "Creating certificates for Monitor and Metrics"
+    mkdir -p ${MONITOR_DIR} || true
+    cd ${MONITOR_DIR}
 
-#     CN="cluster-dashboard"
-#     openssl genrsa -out dashboard.key 2048
+    CN="Monitor & Metrics dashboard"
+    openssl genrsa -out monitor.key 2048
 
-#     cat << EOF > ./csr.conf
-# [ req ]
-# default_bits = 2048
-# prompt = no
-# default_md = sha256
-# req_extensions = req_ext
-# distinguished_name = dn
+    cat << EOF > ./csr.conf
+[ req ]
+default_bits = 2048
+prompt = no
+default_md = sha256
+req_extensions = req_ext
+distinguished_name = dn
     
-# [ dn ]
-# CN = ${CN}
+[ dn ]
+CN = ${CN}
 
-# [ req_ext ]
-# subjectAltName = @alt_names
-    
-# [ v3_ext ]
-# authorityKeyIdentifier=keyid,issuer:always
-# basicConstraints=CA:FALSE
-# keyUsage=keyEncipherment,dataEncipherment
-# extendedKeyUsage=serverAuth,clientAuth
-# subjectAltName=@alt_names
+[ req_ext ]
+subjectAltName = @alt_names
 
-# [ alt_names ]
-# DNS.1 = ${MASTER_PUBLIC_HOSTNAME}
-# IP.1 = ${MASTER_PUBLIC_IPV4}
-# EOF
+[ v3_ext ]
+authorityKeyIdentifier=keyid,issuer:always
+basicConstraints=CA:FALSE
+keyUsage=keyEncipherment,dataEncipherment
+extendedKeyUsage=serverAuth,clientAuth
+subjectAltName=@alt_names
 
-#     openssl req -new -key dashboard.key -out dashboard.csr -config csr.conf -subj "/CN=${CN}"
+[ alt_names ]
+DNS.1 = ${MASTER_PUBLIC_HOSTNAME}
+IP.1 = ${MASTER_PUBLIC_IPV4}
+EOF
 
-#     openssl x509 -req -in dashboard.csr -CA ${CA_LOCATION}/ca.crt -CAkey ${CA_LOCATION}/ca.key \
-#     -CAcreateserial -out dashboard.crt -days 10000 -extensions v3_ext -extfile csr.conf
-# }
+    openssl req -new -key monitor.key -out monitor.csr -config csr.conf -subj "/CN=${CN}/O=PortaOne, Inc"
+
+    openssl x509 -req -in monitor.csr -CA ${CA_LOCATION}/ca.crt -CAkey ${CA_LOCATION}/ca.key \
+    -CAcreateserial -out monitor.crt -days 10000 -extensions v3_ext -extfile csr.conf
+}
 
 # ==================== MAIN ======================================================
 cert_ca
@@ -394,4 +394,4 @@ cert_controller_manager
 cert_admin
 cert_service_account
 # cert_helm
-# cert_dashboard
+cert_monitor

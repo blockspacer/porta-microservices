@@ -5,6 +5,14 @@ set -e
 # to get generated config run:
 # kubectl -n ingress-nginx exec <nginx-ingress-controller-pod-name> -- cat /etc/nginx/nginx.conf > ./nginx.conf
 
+if [ ! -e ./master-env.conf ]; then 
+    echo "ERROR: master-env.conf is missed"
+    exit 1
+fi
+
+source ./master-env.conf
+
+
 # namespace ingress-nginx
 curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/namespace.yaml | kubectl apply -f -
 
@@ -82,6 +90,7 @@ metadata:
     app: ingress-nginx
 data:
   disable-ipv6: "true"
+  enable-vts-status: "true"
 EOF
 
 # TCP configmap
@@ -130,6 +139,8 @@ spec:
         prometheus.io/port: '10254'
         prometheus.io/scrape: 'true'
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${MASTER_PUBLIC_HOSTNAME}
       serviceAccountName: nginx-ingress-serviceaccount
       tolerations:
       - key: CriticalAddonsOnly
@@ -190,4 +201,24 @@ spec:
             periodSeconds: 10
             successThreshold: 1
             timeoutSeconds: 1
+EOF
+
+# Create service for metrics
+cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ingress-controller-metrics
+  namespace: ingress-nginx
+  labels:
+    component: ingress-nginx
+    provider: nginx
+spec:
+  type: ClusterIP
+  ports:
+  - name: http-metrics
+    port: 10254
+    protocol: TCP
+  selector:
+    app: ingress-nginx
 EOF
