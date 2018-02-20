@@ -259,7 +259,7 @@ spec:
   - host: ${MASTER_PUBLIC_HOSTNAME}
     http:
       paths:
-      - path: /${GRAFANA_INGRESS_ROUTE}
+      - path: ${GRAFANA_INGRESS_ROUTE}
         backend:
           serviceName: grafana
           servicePort: web
@@ -486,7 +486,7 @@ metadata:
   labels:
     prometheus: k8s
 spec:
-  replicas: 2
+  replicas: 1
   secrets: 
   - etcd-certs
   version: v2.1.0

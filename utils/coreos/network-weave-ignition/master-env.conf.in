@@ -69,3 +69,35 @@ MASTER_PRIVATE_IPV4="10.16.50.3"
 
 # Master node public hostname. This name should resovle to MASTER_PUBLIC_IPV4
 MASTER_PUBLIC_HOSTNAME="etsys-sm-107.vms"
+
+# ========================================================
+# Monitoring options
+# Is used as base route to monitoring resources
+MONITORING_ROUTE="monitoring"
+
+# ========================================================
+# Grafana options
+
+# Is used as part of URL to grafana ingress as:
+# https://${MASTER_PUBLIC_HOSTNAME}/${GRAFANA_INGRESS_ROUTE}
+GRAFANA_INGRESS_ROUTE="/${MONITORING_ROUTE}/grafana"
+
+# Admin username
+GRAFANA_ADMIN_USER="admin"
+
+# Admin password
+GRAFANA_ADMIN_PASSWORD="admin"
+
+# ========================================================
+# Prometheus options
+
+# Is used as part of URL to prometheus ingress as:
+# https://${MASTER_PUBLIC_HOSTNAME}/${PROMETHEUS_INGRESS_ROUTE}
+PROMETHEUS_INGRESS_ROUTE="/${MONITORING_ROUTE}/prometheus"
+
+# ========================================================
+# AlertManager options
+
+# Is used as part of URL to alert manager ingress as:
+# https://${MASTER_PUBLIC_HOSTNAME}/${ALERT_MNG_INGRESS_ROUTE}
+ALERT_MNG_INGRESS_ROUTE="/${MONITORING_ROUTE}/alert-manager"
