@@ -80,7 +80,7 @@ MONITORING_ROUTE="monitoring"
 
 # Is used as part of URL to grafana ingress as:
 # https://${MASTER_PUBLIC_HOSTNAME}/${GRAFANA_INGRESS_ROUTE}
-GRAFANA_INGRESS_ROUTE="/${MONITORING_ROUTE}/grafana"
+GRAFANA_INGRESS_ROUTE="${MONITORING_ROUTE}/grafana"
 
 # Admin username
 GRAFANA_ADMIN_USER="admin"
@@ -93,11 +93,11 @@ GRAFANA_ADMIN_PASSWORD="admin"
 
 # Is used as part of URL to prometheus ingress as:
 # https://${MASTER_PUBLIC_HOSTNAME}/${PROMETHEUS_INGRESS_ROUTE}
-PROMETHEUS_INGRESS_ROUTE="/${MONITORING_ROUTE}/prometheus"
+PROMETHEUS_INGRESS_ROUTE="${MONITORING_ROUTE}/prometheus"
 
 # ========================================================
 # AlertManager options
 
 # Is used as part of URL to alert manager ingress as:
 # https://${MASTER_PUBLIC_HOSTNAME}/${ALERT_MNG_INGRESS_ROUTE}
-ALERT_MNG_INGRESS_ROUTE="/${MONITORING_ROUTE}/alert-manager"
+ALERT_MNG_INGRESS_ROUTE="${MONITORING_ROUTE}/alert-manager"

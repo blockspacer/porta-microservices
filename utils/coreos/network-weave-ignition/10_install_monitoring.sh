@@ -231,39 +231,6 @@ spec:
   selector:
     app: grafana    
 EOF
-
-    # Create secret for ingress certificate
-    kubectl create secret generic grafana-certs -n monitoring --from-file=tls.crt=${CWD}/CA/monitoring/monitor.crt \
-    --from-file=tls.key=${CWD}/CA/monitoring/monitor.key --from-file=ca.crt=${CWD}/CA/ca.crt
-
-    # Create Ingress
-    cat <<EOF | kubectl create -f -
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/add-base-url: "true"
-    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
-  labels:
-    app: grafana
-  name: ing-grafana
-  namespace: monitoring
-spec:
-  tls:
-  - hosts:
-    - ${MASTER_PUBLIC_HOSTNAME}
-    secretName: grafana-certs
-  rules:
-  - host: ${MASTER_PUBLIC_HOSTNAME}
-    http:
-      paths:
-      - path: ${GRAFANA_INGRESS_ROUTE}
-        backend:
-          serviceName: grafana
-          servicePort: web
-EOF
 }
 
 # Install Prometheus
@@ -512,39 +479,6 @@ spec:
       name: alertmanager-main
       port: web
 EOF
-
-    # Create secret for ingress certificate
-    kubectl create secret generic prometheus-certs -n monitoring --from-file=tls.crt=${CWD}/CA/monitor/monitor.crt \
-    --from-file=tls.key=${CWD}/CA/monitor/monitor.key --from-file=ca.crt=${CWD}/CA/ca.crt
-
-    # Ingress for Prometheus
-    cat <<EOF | kubectl create -f -
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/add-base-url: "true"
-    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
-  labels:
-    app: prometheus
-  name: ing-prometheus
-  namespace: monitoring
-spec:
-  tls:
-  - hosts:
-    - ${MASTER_PUBLIC_HOSTNAME}
-    secretName: prometheus-certs
-  rules:
-  - host: ${MASTER_PUBLIC_HOSTNAME}
-    http:
-      paths:
-      - path: ${PROMETHEUS_INGRESS_ROUTE}
-        backend:
-          serviceName: prometheus-k8s
-          servicePort: web
-EOF
 }
 
 # Install AlertManager
@@ -591,39 +525,6 @@ spec:
     requests:
       memory: 400Mi    
 EOF
-
-     # Create secret for ingress certificate
-    kubectl create secret generic alert-manager-certs -n monitoring --from-file=tls.crt=${CWD}/CA/monitor/monitor.crt \
-    --from-file=tls.key=${CWD}/CA/monitor/monitor.key --from-file=ca.crt=${CWD}/CA/ca.crt
-
-    # Ingress for Alert Manager
-    cat <<EOF | kubectl create -f -
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/add-base-url: "true"
-    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
-  labels:
-    app: alertmanager
-  name: ing-alertmanager
-  namespace: monitoring
-spec:
-  tls:
-  - hosts:
-    - ${MASTER_PUBLIC_HOSTNAME}
-    secretName: alert-manager-certs
-  rules:
-  - host: ${MASTER_PUBLIC_HOSTNAME}
-    http:
-      paths:
-      - path: ${ALERT_MNG_INGRESS_ROUTE}
-        backend:
-          serviceName: alertmanager-main
-          servicePort: web
-EOF
 }
 
 function install_etcd_monitor {
@@ -666,7 +567,7 @@ subsets:
     protocol: TCP
 EOF
 
-    # Create secret for ingress certificate
+    # Create secret for etcd endpoint
     kubectl -n monitoring create secret generic etcd-certs --from-file=$CWD/CA/ca.crt \
     --from-file=$CWD/CA/etcd/etcd.crt --from-file=$CWD/CA/etcd/etcd.key
 
@@ -726,6 +627,46 @@ spec:
 EOF
 }
 
+function install_ingress_resources {
+     # Create secret for ingress certificate
+    kctl create secret generic monitor-certs --from-file=tls.crt=${CWD}/CA/monitoring/monitor.crt \
+    --from-file=tls.key=${CWD}/CA/monitoring/monitor.key --from-file=ca.crt=${CWD}/CA/ca.crt
+
+    cat <<EOF | kubectl create -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/add-base-url: "true"
+    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
+  name: monitor
+  namespace: monitoring
+spec:
+  tls:
+  - hosts:
+    - ${MASTER_PUBLIC_HOSTNAME}
+    secretName: monitor-certs
+  rules:
+  - host: ${MASTER_PUBLIC_HOSTNAME}
+    http:
+      paths:
+      - path: /${GRAFANA_INGRESS_ROUTE}
+        backend:
+          serviceName: grafana
+          servicePort: web
+      - path: /${PROMETHEUS_INGRESS_ROUTE}
+        backend:
+          serviceName: prometheus-k8s
+          servicePort: web
+      - path: /${ALERT_MNG_INGRESS_ROUTE}
+        backend:
+          serviceName: alertmanager-main
+          servicePort: web
+EOF
+}
+
 # ======================== MAIN ========================
 install_prometheus_operator
 install_node_exporter
@@ -735,3 +676,4 @@ install_etcd_monitor
 install_prometheus
 install_alert_manager
 install_ingress_nginx_monitor
+install_ingress_resources
