@@ -176,8 +176,6 @@ spec:
           mountPath: /grafana/conf/provisioning/dashboards
         - name: grafana-dashboard-definitions
           mountPath: /grafana-dashboard-definitions/0
-        - name: grafana-certs
-          mountPath: /grafana/certs
         - name: grafana-config
           mountPath: /grafana/conf.d
         ports:
@@ -203,9 +201,6 @@ spec:
       - name: grafana-dashboard-definitions
         configMap:
           name: grafana-dashboard-definitions
-      - name: grafana-certs
-        secret:
-          secretName: grafana-certs
       - name: grafana-config
         configMap:
           name: grafana-config
