@@ -468,6 +468,7 @@ spec:
       # production use. This value is mainly meant for demonstration/testing
       # purposes.
       memory: 400Mi
+  retention: 30d
   alerting:
     alertmanagers:
     - namespace: monitoring
