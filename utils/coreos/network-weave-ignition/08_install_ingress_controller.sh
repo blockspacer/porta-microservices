@@ -34,11 +34,6 @@ spec:
         app: default-http-backend
     spec:
       terminationGracePeriodSeconds: 60
-      tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/master
       containers:
       - name: default-http-backend
         # Any image is permissable as long as:
@@ -124,6 +119,8 @@ cat <<EOF | kubectl create -f -
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
+  annotations:
+    scheduler.alpha.kubernetes.io/critical-pod: ""
   name: nginx-ingress-controller
   namespace: ingress-nginx 
 spec:

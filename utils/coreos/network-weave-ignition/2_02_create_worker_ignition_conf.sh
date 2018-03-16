@@ -130,6 +130,24 @@ cat << EOF >> $CLOUD_CONF
               token: ${K8S_TOKEN_PUB}.${K8S_TOKEN_SECRET}
 EOF
 
+# add cloud-config.conf
+cat << EOF >> $CLOUD_CONF
+    - path: /etc/kubernetes/cloud-config.conf
+      filesystem: root
+      mode: 0600
+      contents:
+        inline: |
+          [Global]
+          auth-url=${OPENSTACK_AUTH_URL}
+          domain-id=${OPENSTACK_DOMAIN_ID}
+          tenant-name=${OPENSTACK_TENANT_NAME}
+          username=${OPENSTACK_AUTH_USERNAME}
+          password=${OPENSTACK_AUTH_PASSWD}
+
+          [BlockStorage]
+          bs-version=auto
+EOF
+
 # add users
 cat << EOF >> $CLOUD_CONF
 passwd:
@@ -177,64 +195,53 @@ systemd:
         ExecStartPre=/usr/bin/mkdir -p /var/lib/cni
         ExecStartPre=/usr/bin/mkdir -p /etc/cni/net.d
         Environment="RKT_RUN_ARGS=--uuid-file-save=/var/run/kubelet-pod.uuid \
-          --net=host \
-          --dns=host \
-          --volume var-lib-rkt,kind=host,source=/var/lib/rkt \
-          --mount volume=var-lib-rkt,target=/var/lib/rkt \
-          --volume etc-cni-net,kind=host,source=/etc/cni/net.d \
-          --mount volume=etc-cni-net,target=/etc/cni/net.d \
-          --volume weave-net-bin,kind=host,source=/opt/cni/bin \
-          --mount volume=weave-net-bin,target=/opt/weave-net/bin \
-          --volume dns,kind=host,source=/etc/resolv.conf \
-          --mount volume=dns,target=/etc/resolv.conf \
-          --volume var-lib-cni,kind=host,source=/var/lib/cni \
-          --mount volume=var-lib-cni,target=/var/lib/cni \
-          --volume var-log,kind=host,source=/var/log \
-          --mount volume=var-log,target=/var/log \
-          --volume container,kind=host,source=/var/log/containers \
-          --mount volume=container,target=/var/log/containers \
-          --volume rkt,kind=host,source=/usr/bin/rkt \
-          --mount volume=rkt,target=/usr/bin/rkt"
+--net=host \
+--dns=host \
+--volume var-lib-rkt,kind=host,source=/var/lib/rkt \
+--mount volume=var-lib-rkt,target=/var/lib/rkt \
+--volume etc-cni-net,kind=host,source=/etc/cni/net.d \
+--mount volume=etc-cni-net,target=/etc/cni/net.d \
+--volume weave-net-bin,kind=host,source=/opt/cni/bin \
+--mount volume=weave-net-bin,target=/opt/weave-net/bin \
+--volume dns,kind=host,source=/etc/resolv.conf \
+--mount volume=dns,target=/etc/resolv.conf \
+--volume var-lib-cni,kind=host,source=/var/lib/cni \
+--mount volume=var-lib-cni,target=/var/lib/cni \
+--volume var-log,kind=host,source=/var/log \
+--mount volume=var-log,target=/var/log \
+--volume container,kind=host,source=/var/log/containers \
+--mount volume=container,target=/var/log/containers \
+--volume rkt,kind=host,source=/usr/bin/rkt \
+--mount volume=rkt,target=/usr/bin/rkt \
+--volume iscsiadm,kind=host,source=/usr/sbin/iscsiadm \
+--mount volume=iscsiadm,target=/usr/sbin/iscsiadm \
+--volume udevadm,kind=host,source=/bin/udevadm \
+--mount volume=udevadm,target=/usr/sbin/udevadm"
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
-          --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf \
-          --container-runtime=docker \
-          --pod-manifest-path=/etc/kubernetes/manifests \
-          --allow-privileged=true \
-          --client-ca-file=/etc/kubernetes/pki/ca.crt \
-          --authorization-mode=Webhook \
-          --kubeconfig=/etc/kubernetes/kubelet.conf \
-          --cluster-dns=${K8S_CLUSTER_DNS_IPV4} \
-          --cluster-domain=${K8S_CLUSTER_DOMAIN} \
-          --network-plugin=cni \
-          --cni-conf-dir=/etc/cni/net.d \
-          --cni-bin-dir=/opt/cni/bin \
-          --cadvisor-port=0 \
-          --hostname-override=${WORKER_PRIVATE_HOSTNAME} \
-          --authentication-token-webhook
+--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf \
+--container-runtime=docker \
+--pod-manifest-path=/etc/kubernetes/manifests \
+--allow-privileged=true \
+--client-ca-file=/etc/kubernetes/pki/ca.crt \
+--authorization-mode=Webhook \
+--kubeconfig=/etc/kubernetes/kubelet.conf \
+--cluster-dns=${K8S_CLUSTER_DNS_IPV4} \
+--cluster-domain=${K8S_CLUSTER_DOMAIN} \
+--network-plugin=cni \
+--cni-conf-dir=/etc/cni/net.d \
+--cni-bin-dir=/opt/cni/bin \
+--cadvisor-port=0 \
+--hostname-override=${WORKER_PRIVATE_HOSTNAME} \
+--authentication-token-webhook \
+--cloud-config=/etc/kubernetes/cloud-config.conf \
+--cloud-provider=openstack
         ExecStop=-/usr/bin/rkt stop --uuid-file=/var/run/kubelet-pod.uuid
         Restart=always
         RestartSec=10
          
         [Install]
-        WantedBy=multi-user.target     
-    - name: porta-adjust-confs.service
-      enabled: true
-      contents: |
-        [Unit]
-        Description=Adjust kubernets manifest and config files!
-        Type=oneshot
-        Requires=coreos-metadata.service
-        After=coreos-metadata.service
-
-        [Service]
-        EnvironmentFile=/run/metadata/coreos
-        ExecStartPre=/bin/bash -c "cat /run/metadata/coreos | grep HOSTNAME | awk -F '=' -p '{print \$2}' > /etc/hostname"
-        ExecStart=/bin/bash -c "hostname -F /etc/hostname"
-
-        [Install]
         WantedBy=multi-user.target
 EOF
-
 
 # add docker options
 cat << EOF >> $CLOUD_CONF

@@ -34,8 +34,8 @@ K8S_POD_NETWORK="10.2.0.0/16"
 # Kubernetes control plane image tag
 K8S_IMAGE_TAG="v1.9.2"
 
-# Kubelet inage tag
-KUBELET_IMAGE_TAG="v1.9.2_coreos.0"
+# Kubelet image tag
+KUBELET_IMAGE_TAG="${K8S_IMAGE_TAG}_coreos.0"
 
 # ========================================================
 # Kubernetes Bootstrap options
@@ -69,6 +69,22 @@ MASTER_PRIVATE_IPV4="10.16.50.3"
 
 # Master node public hostname. This name should resovle to MASTER_PUBLIC_IPV4
 MASTER_PUBLIC_HOSTNAME="etsys-sm-107.vms"
+
+# Auth URL for cloud-config. Used for K8S <-> OpenStack interaction
+OPENSTACK_AUTH_URL="http://192.168.73.153:5000/v2.0"
+
+# Auth user for cloud-config. Used for K8S <-> OpenStack interaction
+OPENSTACK_AUTH_USERNAME="admin"
+
+# Auth password for cloud-config. Used for K8S <-> OpenStack interaction
+OPENSTACK_AUTH_PASSWD="www333"
+
+# Tenant id for cloud-config. Used for K8S <-> OpenStack interaction
+# On OpenStack control panels, this can be found at Access and Security > API Access > Credentials.
+OPENSTACK_TENANT_NAME="admin"
+
+# Domain id for cloud-config. Used for K8S <-> OpenStack interaction
+OPENSTACK_DOMAIN_ID="default"
 
 # ========================================================
 # Monitoring options

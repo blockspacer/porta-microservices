@@ -229,6 +229,24 @@ cat << EOF >> $CLOUD_CONF
               client-key-data: $(cat $CWD/CA/scheduler/scheduler.key | base64 | tr -d '\r\n')
 EOF
 
+# add cloud-provider-config.conf
+cat << EOF >> $CLOUD_CONF
+    - path: /etc/kubernetes/cloud-config.conf
+      filesystem: root
+      mode: 0600
+      contents:
+        inline: |
+          [Global]
+          auth-url=${OPENSTACK_AUTH_URL}
+          domain-id=${OPENSTACK_DOMAIN_ID}
+          tenant-name=${OPENSTACK_TENANT_NAME}
+          username=${OPENSTACK_AUTH_USERNAME}
+          password=${OPENSTACK_AUTH_PASSWD}
+
+          [BlockStorage]
+          bs-version=auto
+EOF
+
 # add kubernets manifest
 cat << EOF >> $CLOUD_CONF
     - path: /etc/kubernetes/manifests/kube-apiserver.yaml
@@ -251,7 +269,10 @@ cat << EOF >> $CLOUD_CONF
             - command:
               - kube-apiserver
               - --tls-private-key-file=/etc/kubernetes/pki/apiserver.key
-              - --admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota
+              - --admission-control=Initializers,NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,ResourceQuota,PersistentVolumeLabel
+              - --cloud-config=/etc/kubernetes/cloud-config.conf
+              - --cloud-provider=openstack
+              - --external-hostname=${MASTER_PUBLIC_HOSTNAME}
               - --allow-privileged=true
               - --advertise-address=${MASTER_PRIVATE_IPV4}
               - --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt
@@ -290,6 +311,9 @@ cat << EOF >> $CLOUD_CONF
               - mountPath: /etc/kubernetes/pki
                 name: k8s-certs
                 readOnly: true
+              - mountPath: /etc/kubernetes/cloud-config.conf
+                name: cloud-config
+                readOnly: true
               - mountPath: /etc/ssl/certs
                 name: ca-certs
                 readOnly: true
@@ -302,6 +326,10 @@ cat << EOF >> $CLOUD_CONF
                 path: /etc/kubernetes/pki
                 type: DirectoryOrCreate
               name: k8s-certs
+            - hostPath:
+                path: /etc/kubernetes/cloud-config.conf
+                type: FileOrCreate
+              name: cloud-config
             - hostPath:
                 path: /etc/ssl/certs
                 type: DirectoryOrCreate
@@ -339,9 +367,12 @@ cat << EOF >> $CLOUD_CONF
               - --cluster-signing-key-file=/etc/kubernetes/pki/ca.key
               - --address=${MASTER_PRIVATE_IPV4}
               - --leader-elect=true
+              - --cloud-config=/etc/kubernetes/cloud-config.conf
+              - --cloud-provider=openstack
+              - --configure-cloud-routes=false
               - --kubeconfig=/etc/kubernetes/controller-manager.conf
               - --root-ca-file=/etc/kubernetes/pki/ca.crt
-              - --allocate-node-cidrs=true
+              - --allocate-node-cidrs=false
               - --cluster-cidr=${K8S_POD_NETWORK}
               - --node-cidr-mask-size=16
               - --service-cluster-ip-range=${K8S_SERVICE_NETWORK}
@@ -365,6 +396,9 @@ cat << EOF >> $CLOUD_CONF
                 readOnly: true
               - mountPath: /etc/kubernetes/controller-manager.conf
                 name: kubeconfig
+                readOnly: true
+              - mountPath: /etc/kubernetes/cloud-config.conf
+                name: cloud-config
                 readOnly: true
               - mountPath: /etc/pki
                 name: ca-certs-etc-pki
@@ -390,6 +424,10 @@ cat << EOF >> $CLOUD_CONF
                 path: /etc/kubernetes/controller-manager.conf
                 type: FileOrCreate
               name: kubeconfig
+            - hostPath:
+                path: /etc/kubernetes/cloud-config.conf
+                type: FileOrCreate
+              name: cloud-config
     - path: /etc/kubernetes/manifests/kube-scheduler.yaml
       filesystem: root
       mode: 0600
@@ -438,11 +476,11 @@ cat << EOF >> $CLOUD_CONF
             - hostPath:
                 path: /etc/kubernetes/scheduler.conf
                 type: FileOrCreate
-              name: kubeconfig 
+              name: kubeconfig
             - hostPath:
                 path: /etc/kubernetes/pki/ca.crt
                 type: FileOrCreate
-              name: kube-ca-crt                                
+              name: kube-ca-crt
 EOF
 
 # add users
@@ -489,45 +527,53 @@ systemd:
         ExecStartPre=/usr/bin/mkdir -p /var/lib/cni
         ExecStartPre=/usr/bin/mkdir -p /etc/cni/net.d
         Environment="RKT_RUN_ARGS=--uuid-file-save=/var/run/kubelet-pod.uuid \
-          --net=host \
-          --dns=host \
-          --volume var-lib-rkt,kind=host,source=/var/lib/rkt \
-          --mount volume=var-lib-rkt,target=/var/lib/rkt \
-          --volume etc-cni-net,kind=host,source=/etc/cni/net.d \
-          --mount volume=etc-cni-net,target=/etc/cni/net.d \
-          --volume weave-net-bin,kind=host,source=/opt/cni/bin \
-          --mount volume=weave-net-bin,target=/opt/weave-net/bin \
-          --volume dns,kind=host,source=/etc/resolv.conf \
-          --mount volume=dns,target=/etc/resolv.conf \
-          --volume var-lib-cni,kind=host,source=/var/lib/cni \
-          --mount volume=var-lib-cni,target=/var/lib/cni \
-          --volume var-log,kind=host,source=/var/log \
-          --mount volume=var-log,target=/var/log \
-          --volume container,kind=host,source=/var/log/containers \
-          --mount volume=container,target=/var/log/containers \
-          --volume rkt,kind=host,source=/usr/bin/rkt \
-          --mount volume=rkt,target=/usr/bin/rkt"
+--net=host \
+--dns=host \
+--volume var-lib-rkt,kind=host,source=/var/lib/rkt \
+--mount volume=var-lib-rkt,target=/var/lib/rkt \
+--volume etc-cni-net,kind=host,source=/etc/cni/net.d \
+--mount volume=etc-cni-net,target=/etc/cni/net.d \
+--volume weave-net-bin,kind=host,source=/opt/cni/bin \
+--mount volume=weave-net-bin,target=/opt/weave-net/bin \
+--volume dns,kind=host,source=/etc/resolv.conf \
+--mount volume=dns,target=/etc/resolv.conf \
+--volume var-lib-cni,kind=host,source=/var/lib/cni \
+--mount volume=var-lib-cni,target=/var/lib/cni \
+--volume var-log,kind=host,source=/var/log \
+--mount volume=var-log,target=/var/log \
+--volume container,kind=host,source=/var/log/containers \
+--mount volume=container,target=/var/log/containers \
+--volume rkt,kind=host,source=/usr/bin/rkt \
+--mount volume=rkt,target=/usr/bin/rkt \
+--volume iscsiadm,kind=host,source=/usr/sbin/iscsiadm \
+--mount volume=iscsiadm,target=/usr/sbin/iscsiadm \
+--volume udevadm,kind=host,source=/bin/udevadm \
+--mount volume=udevadm,target=/usr/sbin/udevadm \
+--insecure-options=image"
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
-          --container-runtime=docker \
-          --pod-manifest-path=/etc/kubernetes/manifests \
-          --allow-privileged=true \
-          --client-ca-file=/etc/kubernetes/pki/ca.crt \
-          --authorization-mode=Webhook \
-          --kubeconfig=/etc/kubernetes/kubelet.conf \
-          --cluster-dns=${K8S_CLUSTER_DNS_IPV4} \
-          --cluster-domain=${K8S_CLUSTER_DOMAIN} \
-          --network-plugin=cni \
-          --cni-conf-dir=/etc/cni/net.d \
-          --cni-bin-dir=/opt/cni/bin \
-          --cadvisor-port=0 \
-          --hostname-override=${MASTER_PUBLIC_HOSTNAME} \
-          --authentication-token-webhook
+--container-runtime=docker \
+--pod-manifest-path=/etc/kubernetes/manifests \
+--allow-privileged=true \
+--client-ca-file=/etc/kubernetes/pki/ca.crt \
+--authorization-mode=Webhook \
+--kubeconfig=/etc/kubernetes/kubelet.conf \
+--cluster-dns=${K8S_CLUSTER_DNS_IPV4} \
+--cluster-domain=${K8S_CLUSTER_DOMAIN} \
+--network-plugin=cni \
+--cni-conf-dir=/etc/cni/net.d \
+--cni-bin-dir=/opt/cni/bin \
+--cadvisor-port=0 \
+--authentication-token-webhook \
+--register-with-taints=node-role.kubernetes.io/master="":NoSchedule \
+--node-labels=node-role.kubernetes.io/master="" \
+--cloud-config=/etc/kubernetes/cloud-config.conf \
+--cloud-provider=openstack
         ExecStop=-/usr/bin/rkt stop --uuid-file=/var/run/kubelet-pod.uuid
         Restart=always
         RestartSec=10
          
         [Install]
-        WantedBy=multi-user.target     
+        WantedBy=multi-user.target
     - name: porta-adjust-confs.service
       enabled: true
       contents: |
@@ -539,7 +585,7 @@ systemd:
 
         [Service]
         EnvironmentFile=/run/metadata/coreos
-        ExecStartPre=/bin/bash -c "cat /run/metadata/coreos | grep HOSTNAME | awk -F '=' -p '{print \$2}' > /etc/hostname"
+        ExecStartPre=/bin/bash -c "echo ${MASTER_PUBLIC_HOSTNAME} > /etc/hostname"
         ExecStart=/bin/bash -c "hostname -F /etc/hostname"
 
         [Install]

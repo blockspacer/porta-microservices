@@ -48,7 +48,6 @@ data:
       kubeconfig: /var/lib/kube-proxy/kubeconfig.conf
       qps: 5
     clusterCIDR: ${K8S_POD_NETWORK}
-    hostnameOverride: ${MASTER_PUBLIC_HOSTNAME}
     configSyncPeriod: 15m0s
     conntrack:
       max: null
@@ -80,10 +79,10 @@ data:
     - cluster:
         certificate-authority: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         server: https://${MASTER_PRIVATE_IPV4}:6443
-      name: default
+      name: ${K8S_CLUSTER_NAME}
     contexts:
     - context:
-        cluster: default
+        cluster: ${K8S_CLUSTER_NAME}
         namespace: default
         user: default
       name: default
@@ -144,9 +143,6 @@ spec:
       tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/master
-      - effect: NoSchedule
-        key: node.cloudprovider.kubernetes.io/uninitialized
-        value: "true"
       volumes:
       - configMap:
           defaultMode: 420
