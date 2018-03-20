@@ -449,7 +449,7 @@ metadata:
     prometheus: k8s
 spec:
   replicas: 1
-  secrets: 
+  secrets:
   - etcd-certs
   version: v2.1.0
   externalUrl: http://${MASTER_PUBLIC_HOSTNAME}/${PROMETHEUS_INGRESS_ROUTE}
@@ -469,6 +469,20 @@ spec:
       # purposes.
       memory: 400Mi
   retention: 30d
+  storage:
+    class: openstack-cinder
+    selector:
+    resources:
+      requests:
+        storage: ${PROMETHEUS_STORAGE_SIZE}
+    volumeClaimTemplate:
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: openstack-cinder
+        selector:
+        resources:
+          requests:
+            storage: ${PROMETHEUS_STORAGE_SIZE}
   alerting:
     alertmanagers:
     - namespace: monitoring

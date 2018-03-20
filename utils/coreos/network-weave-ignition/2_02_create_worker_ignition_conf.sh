@@ -159,6 +159,10 @@ passwd:
 EOF
 
 # add systemd units
+# remove mounts like
+# --volume systemd-libs,kind=host,source=/usr/lib/systemd/libsystemd-shared-235.so \
+# --mount volume=systemd-libs,target=/usr/lib/systemd/libsystemd-shared-235.so \
+# once the https://github.com/kubernetes/kubernetes/issues/61356 is resolved
 cat << EOF >> $CLOUD_CONF
 systemd:
   units:
@@ -216,7 +220,15 @@ systemd:
 --volume iscsiadm,kind=host,source=/usr/sbin/iscsiadm \
 --mount volume=iscsiadm,target=/usr/sbin/iscsiadm \
 --volume udevadm,kind=host,source=/bin/udevadm \
---mount volume=udevadm,target=/usr/sbin/udevadm"
+--mount volume=udevadm,target=/usr/sbin/udevadm \
+--volume systemd-libs,kind=host,source=/usr/lib/systemd/libsystemd-shared-235.so \
+--mount volume=systemd-libs,target=/usr/lib/systemd/libsystemd-shared-235.so \
+--volume cryptsetup-libs,kind=host,source=/lib64/libcryptsetup.so.4 \
+--mount volume=cryptsetup-libs,target=/usr/lib/x86_64-linux-gnu/libcryptsetup.so.4 \
+--volume seccomp-libs,kind=host,source=/lib64/libseccomp.so.2 \
+--mount volume=seccomp-libs,target=/lib/x86_64-linux-gnu/libseccomp.so.2 \
+--volume devmapper-libs,kind=host,source=/lib64/libdevmapper.so.1.02 \
+--mount volume=devmapper-libs,target=/lib/x86_64-linux-gnu/libdevmapper.so.1.02"
         ExecStart=/usr/lib/coreos/kubelet-wrapper \
 --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf \
 --container-runtime=docker \
