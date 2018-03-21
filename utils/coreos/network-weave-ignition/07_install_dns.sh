@@ -125,7 +125,6 @@ spec:
           name: config-volume
       dnsPolicy: Default
       restartPolicy: Always
-      schedulerName: default-scheduler
       securityContext: {}
       serviceAccount: coredns
       serviceAccountName: coredns
