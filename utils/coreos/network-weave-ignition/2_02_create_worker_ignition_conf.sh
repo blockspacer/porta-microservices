@@ -245,6 +245,7 @@ systemd:
 --cadvisor-port=0 \
 --hostname-override=${WORKER_PRIVATE_HOSTNAME} \
 --authentication-token-webhook \
+--node-labels= kubernetes.io/role="${WORKER_NODE_ROLE}" \
 --cloud-config=/etc/kubernetes/cloud-config.conf \
 --cloud-provider=openstack
         ExecStop=-/usr/bin/rkt stop --uuid-file=/var/run/kubelet-pod.uuid

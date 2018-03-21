@@ -6,3 +6,6 @@ WORKER_PRIVATE_IPV4="10.16.50.4"
 
 # Worker node hostname. Can be internal
 WORKER_PRIVATE_HOSTNAME="worker-1"
+
+# The role that will be assigned to this node
+WORKER_NODE_ROLE="minion"
