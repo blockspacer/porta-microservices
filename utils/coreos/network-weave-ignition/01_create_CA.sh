@@ -20,6 +20,7 @@ CONTR_MANAGER_DIR="${CA_LOCATION}/controller-manager"
 SCHEDULER_DIR="${CA_LOCATION}/scheduler"
 ADMIN_DIR="${CA_LOCATION}/admin"
 SERVICE_ACCOUNT_DIR="${CA_LOCATION}/service-account"
+LOGGING_DIR="${CA_LOCATION}/logging"
 
 # ================================================================================
 function cert_ca {
@@ -316,7 +317,7 @@ function cert_service_account {
 # default_md = sha256
 # req_extensions = req_ext
 # distinguished_name = dn
-    
+
 # [ dn ]
 # CN = ${CN}
 
@@ -383,6 +384,47 @@ EOF
     -CAcreateserial -out monitor.crt -days 10000 -extensions v3_ext -extfile csr.conf
 }
 
+# ================================================================================
+
+function cert_logging {
+    echo "Creating certificates for Logging Dashboard"
+    mkdir -p ${LOGGING_DIR} || true
+    cd ${LOGGING_DIR}
+
+    CN="Logging dashboard"
+    openssl genrsa -out logging.key 2048
+
+    cat << EOF > ./csr.conf
+[ req ]
+default_bits = 2048
+prompt = no
+default_md = sha256
+req_extensions = req_ext
+distinguished_name = dn
+
+[ dn ]
+CN = ${CN}
+
+[ req_ext ]
+subjectAltName = @alt_names
+
+[ v3_ext ]
+authorityKeyIdentifier=keyid,issuer:always
+basicConstraints=CA:FALSE
+keyUsage=keyEncipherment,dataEncipherment
+extendedKeyUsage=serverAuth,clientAuth
+subjectAltName=@alt_names
+
+[ alt_names ]
+DNS.1 = ${MASTER_PUBLIC_HOSTNAME}
+IP.1 = ${MASTER_PUBLIC_IPV4}
+EOF
+
+    openssl req -new -key logging.key -out logging.csr -config csr.conf -subj "/CN=${CN}/O=PortaOne, Inc"
+
+    openssl x509 -req -in logging.csr -CA ${CA_LOCATION}/ca.crt -CAkey ${CA_LOCATION}/ca.key \
+    -CAcreateserial -out logging.crt -days 10000 -extensions v3_ext -extfile csr.conf
+}
 # ==================== MAIN ======================================================
 cert_ca
 cert_etcd
@@ -395,3 +437,4 @@ cert_admin
 cert_service_account
 # cert_helm
 cert_monitor
+cert_logging

@@ -122,3 +122,32 @@ PROMETHEUS_STORAGE_SIZE="10Gi"
 # Is used as part of URL to alert manager ingress as:
 # https://${MASTER_PUBLIC_HOSTNAME}/${ALERT_MNG_INGRESS_ROUTE}
 ALERT_MNG_INGRESS_ROUTE="${MONITORING_ROUTE}/alert-manager"
+
+# ========================================================
+# ElastickSearch options
+
+# Is used in Logging system as logs storage
+ES_LOGGING_PORT="9200"
+
+# The size of volume that will be requested in OpenStack
+# for ES data storage.
+# Possible values: N [Gi|G] | [Mi|M]
+ES_STORAGE_SIZE="10Gi"
+
+# Is used for ES cluster name
+ES_CLUSTER_NAME="escluster"
+
+# Number of master nodes
+ES_MASTER_COUNT=1
+
+# Number of client nodes
+ES_CLIENT_COUNT=1
+
+# Number of storage nodes (shards)
+ES_STORAGE_COUNT=1
+# ========================================================
+# Kibana options
+
+# Is used as part of URL to kibana ingress as:
+# https://${MASTER_PUBLIC_HOSTNAME}/${KIBANA_INGRESS_ROUTE}
+KIBANA_INGRESS_ROUTE="logging/kibana"
