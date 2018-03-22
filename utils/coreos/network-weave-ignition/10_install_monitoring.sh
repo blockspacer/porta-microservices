@@ -159,6 +159,8 @@ spec:
       labels:
         app: grafana
     spec:
+      nodeSelector:
+        kubernetes.io/role: minion
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
@@ -454,6 +456,8 @@ spec:
   version: v2.1.0
   externalUrl: http://${MASTER_PUBLIC_HOSTNAME}/${PROMETHEUS_INGRESS_ROUTE}
   serviceAccountName: prometheus-k8s
+  nodeSelector:
+    kubernetes.io/role: storage
   serviceMonitorSelector:
     matchExpressions:
     - {key: k8s-app, operator: Exists}
@@ -531,6 +535,8 @@ spec:
   replicas: 1
   version: v0.14.0
   externalUrl: http://${MASTER_PUBLIC_HOSTNAME}/${ALERT_MNG_INGRESS_ROUTE}
+  nodeSelector:
+    kubernetes.io/role: minion
   resources:
     requests:
       memory: 400Mi    
