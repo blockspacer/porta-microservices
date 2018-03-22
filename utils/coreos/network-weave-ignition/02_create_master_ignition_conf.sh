@@ -113,16 +113,6 @@ $(cat $CWD/CA/etcd/etcd.key | sed 's/^/          /')
       contents:
         inline: |
 $(cat $CWD/CA/etcd/etcd.crt | sed 's/^/          /')
-    - path: /var/lib/etcd/ssl/ca.crt
-      filesystem: root
-      mode: 0600
-      user:
-        name: etcd
-      group:
-        name: etcd
-      contents:
-        inline: |
-$(cat $CWD/CA/ca.crt | sed 's/^/          /')
 EOF
 
 # add kubernets network config
@@ -483,12 +473,25 @@ cat << EOF >> $CLOUD_CONF
               name: kube-ca-crt
 EOF
 
+# add links
+cat << EOF >> $CLOUD_CONF
+  links:
+    - path: /var/lib/etcd/ssl/ca.crt
+      filesystem: root
+      user:
+        name: etcd
+      group:
+        name: etcd
+      target: /etc/kubernetes/pki/ca.crt
+      hard: true
+EOF
+
 # add users
 cat << EOF >> $CLOUD_CONF
 passwd:
   users:
-    - name: "porta-one"
-      password_hash: "$(openssl passwd -1 -salt $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 6 ; echo '') b0neynem)"
+    - name: "${PORTA_USER_NAME}"
+      password_hash: "$(openssl passwd -1 -salt $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 6 ; echo '') ${PORTA_USER_PASSWD})"
       groups:
        - "sudo"
 EOF
@@ -595,7 +598,6 @@ systemd:
         After=coreos-metadata.service
 
         [Service]
-        EnvironmentFile=/run/metadata/coreos
         ExecStartPre=/bin/bash -c "echo ${MASTER_PUBLIC_HOSTNAME} > /etc/hostname"
         ExecStart=/bin/bash -c "hostname -F /etc/hostname"
 

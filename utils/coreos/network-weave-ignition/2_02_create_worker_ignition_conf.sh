@@ -152,8 +152,8 @@ EOF
 cat << EOF >> $CLOUD_CONF
 passwd:
   users:
-    - name: "porta-one"
-      password_hash: "$(openssl passwd -1 -salt $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 6 ; echo '') b0neynem)"
+    - name: "${PORTA_USER_NAME}"
+      password_hash: "$(openssl passwd -1 -salt $(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 6 ; echo '') ${PORTA_USER_PASSWD})"
       groups:
        - "sudo"
 EOF
@@ -245,7 +245,7 @@ systemd:
 --cadvisor-port=0 \
 --hostname-override=${WORKER_PRIVATE_HOSTNAME} \
 --authentication-token-webhook \
---node-labels= kubernetes.io/role="${WORKER_NODE_ROLE}" \
+--node-labels=kubernetes.io/role="${WORKER_NODE_ROLE}" \
 --cloud-config=/etc/kubernetes/cloud-config.conf \
 --cloud-provider=openstack
         ExecStop=-/usr/bin/rkt stop --uuid-file=/var/run/kubelet-pod.uuid
