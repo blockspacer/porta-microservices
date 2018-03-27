@@ -86,6 +86,12 @@ metadata:
 data:
   disable-ipv6: "true"
   enable-vts-status: "true"
+  enable-opentracing: "true"
+  jaeger-collector-host: "${MASTER_PRIVATE_IPV4}"
+  jaeger-collector-port: "6831"
+  jaeger-service-name: "nginx"
+  jaeger-sampler-type: "const"
+  jaeger-sampler-param: "0"
 EOF
 
 # TCP configmap

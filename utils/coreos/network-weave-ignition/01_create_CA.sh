@@ -21,6 +21,7 @@ SCHEDULER_DIR="${CA_LOCATION}/scheduler"
 ADMIN_DIR="${CA_LOCATION}/admin"
 SERVICE_ACCOUNT_DIR="${CA_LOCATION}/service-account"
 LOGGING_DIR="${CA_LOCATION}/logging"
+TRACING_DIR="${CA_LOCATION}/tracing"
 
 # ================================================================================
 function cert_ca {
@@ -425,6 +426,47 @@ EOF
     openssl x509 -req -in logging.csr -CA ${CA_LOCATION}/ca.crt -CAkey ${CA_LOCATION}/ca.key \
     -CAcreateserial -out logging.crt -days 10000 -extensions v3_ext -extfile csr.conf
 }
+# ================================================================================
+
+function cert_tracing {
+    echo "Creating certificates for Tracing Dashboard"
+    mkdir -p ${TRACING_DIR} || true
+    cd ${TRACING_DIR}
+
+    CN="Tracing dashboard"
+    openssl genrsa -out tracing.key 2048
+
+    cat << EOF > ./csr.conf
+[ req ]
+default_bits = 2048
+prompt = no
+default_md = sha256
+req_extensions = req_ext
+distinguished_name = dn
+
+[ dn ]
+CN = ${CN}
+
+[ req_ext ]
+subjectAltName = @alt_names
+
+[ v3_ext ]
+authorityKeyIdentifier=keyid,issuer:always
+basicConstraints=CA:FALSE
+keyUsage=keyEncipherment,dataEncipherment
+extendedKeyUsage=serverAuth,clientAuth
+subjectAltName=@alt_names
+
+[ alt_names ]
+DNS.1 = ${MASTER_PUBLIC_HOSTNAME}
+IP.1 = ${MASTER_PUBLIC_IPV4}
+EOF
+
+    openssl req -new -key tracing.key -out tracing.csr -config csr.conf -subj "/CN=${CN}/O=PortaOne, Inc"
+
+    openssl x509 -req -in tracing.csr -CA ${CA_LOCATION}/ca.crt -CAkey ${CA_LOCATION}/ca.key \
+    -CAcreateserial -out tracing.crt -days 10000 -extensions v3_ext -extfile csr.conf
+}
 # ==================== MAIN ======================================================
 cert_ca
 cert_etcd
@@ -438,3 +480,4 @@ cert_service_account
 # cert_helm
 cert_monitor
 cert_logging
+cert_tracing

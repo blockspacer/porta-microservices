@@ -151,3 +151,10 @@ ES_STORAGE_COUNT=1
 # Is used as part of URL to kibana ingress as:
 # https://${MASTER_PUBLIC_HOSTNAME}/${KIBANA_INGRESS_ROUTE}
 KIBANA_INGRESS_ROUTE="logging/kibana"
+
+# ========================================================
+# Tracing options
+
+# Is used as part of URL to tracing ingress as:
+# https://${MASTER_PUBLIC_HOSTNAME}/${TRACING_INGRESS_ROUTE}
+TRACING_INGRESS_ROUTE="tracing/jaeger"
