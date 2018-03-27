@@ -1,4 +1,12 @@
 # ========================================================
+# Porta options
+# SSH user name
+PORTA_USER_NAME="porta-one"
+
+# SSH user passwd
+PORTA_USER_PASSWD="b0neynem"
+
+# ========================================================
 # Etcd options
 
 # Discovery token that will be used by new Etcd node
