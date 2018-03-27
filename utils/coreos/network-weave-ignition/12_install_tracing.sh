@@ -43,6 +43,7 @@ data:
       server-urls: http://elasticsearch.logging:${ES_LOGGING_PORT}
     query:
       static-files: /go/jaeger-ui/
+      base-path: /${TRACING_INGRESS_ROUTE}
   agent: |
     collector:
       host-port: "jaeger-collector:14267"
