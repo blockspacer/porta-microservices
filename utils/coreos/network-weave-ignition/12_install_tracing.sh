@@ -14,6 +14,7 @@ source ./master-env.conf
 
 CWD=$(dirname $(readlink -f "$0"))
 
+JAEGER_DOCKER_IMAGE_TAG="1.3"
 
 function install_prerequisites {
   # Create namespace for tracing staff
@@ -70,7 +71,7 @@ spec:
       nodeSelector:
         kubernetes.io/role: minion
       containers:
-      - image: jaegertracing/jaeger-collector:1.2
+      - image: jaegertracing/jaeger-collector:${JAEGER_DOCKER_IMAGE_TAG}
         name: jaeger-collector
         command:
           - "/go/bin/collector-linux"
@@ -150,7 +151,7 @@ spec:
       nodeSelector:
         kubernetes.io/role: minion
       containers:
-      - image: jaegertracing/jaeger-query:latest
+      - image: jaegertracing/jaeger-query:${JAEGER_DOCKER_IMAGE_TAG}
         name: jaeger-query
         command:
           - "/go/bin/query-linux"
@@ -225,7 +226,7 @@ spec:
         key: node-role.kubernetes.io/master
       containers:
       - name: agent-instance
-        image: jaegertracing/jaeger-agent:1.2
+        image: jaegertracing/jaeger-agent:${JAEGER_DOCKER_IMAGE_TAG}
         command:
           - "/go/bin/agent-linux"
           - "--config-file=/conf/agent.yaml"
@@ -262,7 +263,6 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/add-base-url: "true"
     nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
     nginx.ingress.kubernetes.io/configuration-snippet: |
