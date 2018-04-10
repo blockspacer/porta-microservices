@@ -159,10 +159,13 @@ passwd:
 EOF
 
 # add systemd units
-# remove mounts like
+# TODO:
+# 1) remove mounts like
 # --volume systemd-libs,kind=host,source=/usr/lib/systemd/libsystemd-shared-235.so \
 # --mount volume=systemd-libs,target=/usr/lib/systemd/libsystemd-shared-235.so \
 # once the https://github.com/kubernetes/kubernetes/issues/61356 is resolved
+# 2) consider enabling update-engine.service and locksmithd.service
+# (OS auto update and reboot to new partition)
 cat << EOF >> $CLOUD_CONF
 systemd:
   units:
@@ -254,6 +257,10 @@ systemd:
          
         [Install]
         WantedBy=multi-user.target
+    - name: update-engine.service
+      mask: true
+    - name: locksmithd.service
+      mask: true
 EOF
 
 # add docker options
