@@ -73,7 +73,7 @@ IP.2 = ${K8S_SERVICE_IP}
 IP.3 = ${MASTER_PRIVATE_IPV4}
 EOF
 
-    openssl req -new -key etcd.key -out etcd.csr -config csr.conf -subj "/CN=${CN}"
+    openssl req -new -key etcd.key -out etcd.csr -config csr.conf
 
     openssl x509 -req -in etcd.csr -CA ${CA_LOCATION}/ca.crt -CAkey ${CA_LOCATION}/ca.key \
     -CAcreateserial -out etcd.crt -days 10000 -extensions v3_ext -extfile csr.conf
@@ -114,14 +114,14 @@ DNS.1 = ${K8S_CLUSTER_NAME}
 DNS.2 = ${K8S_CLUSTER_NAME}.default
 DNS.3 = ${K8S_CLUSTER_NAME}.default.svc
 DNS.4 = ${K8S_CLUSTER_NAME}.default.svc.cluster
-DNS.5 = ${K8S_CLUSTER_NAME}.default.svc.cluster.local
+DNS.5 = ${K8S_CLUSTER_NAME}.default.svc.${K8S_CLUSTER_DOMAIN}
 DNS.6 = ${MASTER_PUBLIC_HOSTNAME}
 IP.1 = ${MASTER_PUBLIC_IPV4}
 IP.2 = ${K8S_SERVICE_IP}
 IP.3 = ${MASTER_PRIVATE_IPV4}
 EOF
 
-    openssl req -new -key apiserver.key -out apiserver.csr -config csr.conf -subj "/CN=${CN}"
+    openssl req -new -key apiserver.key -out apiserver.csr -config csr.conf
 
     openssl x509 -req -in apiserver.csr -CA ${CA_LOCATION}/ca.crt -CAkey ${CA_LOCATION}/ca.key \
     -CAcreateserial -out apiserver.crt -days 10000 -extensions v3_ext -extfile csr.conf
@@ -141,10 +141,11 @@ function cert_api_kubelet_client {
 default_bits = 2048
 prompt = no
 default_md = sha256
-distinguished_name = dn
+distinguished_name = req_distinguished_name
 
-[ dn ]
-CN = ${CN}
+[ req_distinguished_name ]
+O=system:masters
+CN=${CN}
 
 [ v3_ext ]
 authorityKeyIdentifier=keyid,issuer:always
@@ -153,7 +154,7 @@ keyUsage=keyEncipherment,dataEncipherment
 extendedKeyUsage=clientAuth
 EOF
 
-    openssl req -new -key apiserver-kubelet-client.key -out apiserver-kubelet-client.csr -config csr.conf -subj "/CN=${CN}/O=system:masters"
+    openssl req -new -key apiserver-kubelet-client.key -out apiserver-kubelet-client.csr -config csr.conf
 
     openssl x509 -req -in apiserver-kubelet-client.csr -CA ${CA_LOCATION}/ca.crt -CAkey ${CA_LOCATION}/ca.key \
     -CAcreateserial -out apiserver-kubelet-client.crt -days 10000 -extensions v3_ext -extfile csr.conf
@@ -174,10 +175,11 @@ function cert_kubelet {
 default_bits = 2048
 prompt = no
 default_md = sha256
-distinguished_name = dn
-    
-[ dn ]
-CN = ${CN}
+distinguished_name = req_distinguished_name
+
+[ req_distinguished_name ]
+O=system:nodes
+CN=${CN}
 
 [ v3_ext ]
 authorityKeyIdentifier=keyid,issuer:always
@@ -186,7 +188,7 @@ keyUsage=keyEncipherment,dataEncipherment
 extendedKeyUsage=clientAuth
 EOF
 
-    openssl req -new -key kubelet.key -out kubelet.csr -config csr.conf -subj "/O=system:nodes/CN=${CN}"
+    openssl req -new -key kubelet.key -out kubelet.csr -config csr.conf
 
     openssl x509 -req -in kubelet.csr -CA ${CA_LOCATION}/ca.crt -CAkey ${CA_LOCATION}/ca.key \
     -CAcreateserial -out kubelet.crt -days 10000 -extensions v3_ext -extfile csr.conf
@@ -219,7 +221,7 @@ keyUsage=keyEncipherment,dataEncipherment
 extendedKeyUsage=clientAuth
 EOF
 
-    openssl req -new -key controller-manager.key -out controller-manager.csr -config csr.conf -subj "/CN=${CN}"
+    openssl req -new -key controller-manager.key -out controller-manager.csr -config csr.conf
 
     openssl x509 -req -in controller-manager.csr -CA ${CA_LOCATION}/ca.crt -CAkey ${CA_LOCATION}/ca.key \
     -CAcreateserial -out controller-manager.crt -days 10000 -extensions v3_ext -extfile csr.conf
@@ -252,7 +254,7 @@ keyUsage=keyEncipherment,dataEncipherment
 extendedKeyUsage=clientAuth
 EOF
 
-    openssl req -new -key scheduler.key -out scheduler.csr -config csr.conf -subj "/CN=${CN}"
+    openssl req -new -key scheduler.key -out scheduler.csr -config csr.conf
 
     openssl x509 -req -in scheduler.csr -CA ${CA_LOCATION}/ca.crt -CAkey ${CA_LOCATION}/ca.key \
     -CAcreateserial -out scheduler.crt -days 10000 -extensions v3_ext -extfile csr.conf
@@ -273,10 +275,11 @@ function cert_admin {
 default_bits = 2048
 prompt = no
 default_md = sha256
-distinguished_name = dn
+distinguished_name = req_distinguished_name
 
-[ dn ]
-CN = ${CN}
+[ req_distinguished_name ]
+O=system:masters
+CN=${CN}
 
 [ v3_ext ]
 authorityKeyIdentifier=keyid,issuer:always
@@ -285,7 +288,7 @@ keyUsage=keyEncipherment,dataEncipherment
 extendedKeyUsage=clientAuth
 EOF
 
-    openssl req -new -key admin.key -out admin.csr -config csr.conf -subj "/CN=${CN}/O=system:masters"
+    openssl req -new -key admin.key -out admin.csr -config csr.conf
 
     openssl x509 -req -in admin.csr -CA ${CA_LOCATION}/ca.crt -CAkey ${CA_LOCATION}/ca.key \
     -CAcreateserial -out admin.crt -days 10000 -extensions v3_ext -extfile csr.conf
@@ -359,10 +362,11 @@ default_bits = 2048
 prompt = no
 default_md = sha256
 req_extensions = req_ext
-distinguished_name = dn
-    
-[ dn ]
-CN = ${CN}
+distinguished_name = req_distinguished_name
+
+[ req_distinguished_name ]
+O=PortaOne, Inc
+CN=${CN}
 
 [ req_ext ]
 subjectAltName = @alt_names
@@ -379,7 +383,7 @@ DNS.1 = ${MASTER_PUBLIC_HOSTNAME}
 IP.1 = ${MASTER_PUBLIC_IPV4}
 EOF
 
-    openssl req -new -key monitor.key -out monitor.csr -config csr.conf -subj "/CN=${CN}/O=PortaOne, Inc"
+    openssl req -new -key monitor.key -out monitor.csr -config csr.conf
 
     openssl x509 -req -in monitor.csr -CA ${CA_LOCATION}/ca.crt -CAkey ${CA_LOCATION}/ca.key \
     -CAcreateserial -out monitor.crt -days 10000 -extensions v3_ext -extfile csr.conf
@@ -401,10 +405,11 @@ default_bits = 2048
 prompt = no
 default_md = sha256
 req_extensions = req_ext
-distinguished_name = dn
+distinguished_name = req_distinguished_name
 
-[ dn ]
-CN = ${CN}
+[ req_distinguished_name ]
+O=PortaOne, Inc
+CN=${CN}
 
 [ req_ext ]
 subjectAltName = @alt_names
@@ -421,7 +426,7 @@ DNS.1 = ${MASTER_PUBLIC_HOSTNAME}
 IP.1 = ${MASTER_PUBLIC_IPV4}
 EOF
 
-    openssl req -new -key logging.key -out logging.csr -config csr.conf -subj "/CN=${CN}/O=PortaOne, Inc"
+    openssl req -new -key logging.key -out logging.csr -config csr.conf
 
     openssl x509 -req -in logging.csr -CA ${CA_LOCATION}/ca.crt -CAkey ${CA_LOCATION}/ca.key \
     -CAcreateserial -out logging.crt -days 10000 -extensions v3_ext -extfile csr.conf
@@ -442,10 +447,11 @@ default_bits = 2048
 prompt = no
 default_md = sha256
 req_extensions = req_ext
-distinguished_name = dn
+distinguished_name = req_distinguished_name
 
-[ dn ]
-CN = ${CN}
+[ req_distinguished_name ]
+O=PortaOne, Inc
+CN=${CN}
 
 [ req_ext ]
 subjectAltName = @alt_names
@@ -462,7 +468,7 @@ DNS.1 = ${MASTER_PUBLIC_HOSTNAME}
 IP.1 = ${MASTER_PUBLIC_IPV4}
 EOF
 
-    openssl req -new -key tracing.key -out tracing.csr -config csr.conf -subj "/CN=${CN}/O=PortaOne, Inc"
+    openssl req -new -key tracing.key -out tracing.csr -config csr.conf
 
     openssl x509 -req -in tracing.csr -CA ${CA_LOCATION}/ca.crt -CAkey ${CA_LOCATION}/ca.key \
     -CAcreateserial -out tracing.crt -days 10000 -extensions v3_ext -extfile csr.conf
