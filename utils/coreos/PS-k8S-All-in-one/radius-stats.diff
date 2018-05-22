@@ -1,0 +1,164 @@
+diff --git a/scripts/radsensor b/scripts/radsensor
+index 2b0f5a9..9396a84 100755
+--- a/scripts/radsensor
++++ b/scripts/radsensor
+@@ -21,6 +21,8 @@ use Porta::StatPoint qw(SP);
+ 
+ use AnyEvent ();
+ use Coro ();
++use IO::File;
++use Math::BigInt;
+ use POSIX qw(:signal_h);
+ use Sys::CPU qw(cpu_count);
+ 
+@@ -43,6 +45,7 @@ use constant {
+ 
+ use constant {
+     DEFAULT_TICK_PERIOD       => 5,
++    CUMULATIVE_TICK_PERIOD    => 10,
+     MONITOR_TICK_PERIOD       => 60,     # one minute
+     CLUSTER_STATE_TICK_PERIOD => 300,    # five minutes
+     DISABLED_TICK_PERIOD      => -1,     # disabled
+@@ -53,6 +56,12 @@ use constant {
+     CORO_MAX_DEFER_DURATION => 1,      # 1 seconds
+ };
+ 
++use constant STATS_FILE => '/var/run/porta-one/radiusd/radiusd-cluster.stats';
++
++const my $_DISPATCHER_UNI     => 0;
++const my $_DISPATCHER_SMP     => 1;
++const my $_DISPATCHER_CLUSTER => 2;
++
+ $Porta::Cluster::TIMEOUT = -1;
+ 
+ # state
+@@ -62,6 +71,10 @@ my %monitor_status = ();
+ my $global = Porta::Cluster::Statistics->new;
+ my ( $local_ip, $graceful );
+ 
++my %cumulative_stats = map {
++    $_ => Math::BigInt->bzero(),
++} qw(in out lost badauth badclnt badtime badreq be_error proc proc_cnt queue queue_cnt);
++
+ my %stat_types = (
+     'local'   => [qw(cpu_master cpu_sensor cpu_slaves mem_master mem_sensor mem_slaves)],
+     'cluster' => [
+@@ -84,6 +97,52 @@ my %periodic_checks = (
+             return 1;
+         },
+     },
++    cumulative => {
++        watcher => undef,
++        tick_period => CUMULATIVE_TICK_PERIOD,
++        do_periodic => sub {
++            my $timestamp = AE::now();
++
++            my $requests_pending = $cumulative_stats{out}->copy();
++            for my $key (qw(in lost)) {
++                $requests_pending->bsub( $cumulative_stats{$key} );
++            }
++
++            my $requests_failed = $cumulative_stats{badauth}->copy();
++            for my $key (qw(badclnt badtime badreq)) {
++                $requests_failed->badd( $cumulative_stats{$key} );
++            }
++
++            my $proc = $cumulative_stats{proc};
++            if ( !$cumulative_stats{proc_cnt}->is_zero() ) {
++                $proc->bdiv( $cumulative_stats{proc_cnt} );
++                $cumulative_stats{proc}     = Math::BigInt->bzero();
++                $cumulative_stats{proc_cnt} = Math::BigInt->bzero();
++            }
++
++            my $queue = $cumulative_stats{queue};
++            if ( !$cumulative_stats{queue_cnt}->is_zero() ) {
++                $queue->bdiv( $cumulative_stats{queue_cnt} );
++                $cumulative_stats{queue}     = Math::BigInt->bzero();
++                $cumulative_stats{queue_cnt} = Math::BigInt->bzero();
++            }
++
++            my $fh = IO::File->new( STATS_FILE, O_CREAT | O_WRONLY | O_TRUNC );
++            if ($fh) {
++                printf $fh "requests=%s\nrequests_pending=%s\nrequests_lost=%s\nrequests_failed=%s\nbe_errors=%s\nproc=%s\nqueue=%s\n",
++                    $cumulative_stats{in}->bstr(),
++                    $requests_pending->bstr(),
++                    $cumulative_stats{lost}->bstr(),
++                    $requests_failed->bstr(),
++                    $cumulative_stats{be_error}->bstr(),
++                    $proc->bstr(),
++                    $queue->bstr();
++                undef $fh;
++            }
++
++            return 1;
++        },
++    },
+     'monitor' => {
+         'watcher'     => undef,
+         'tick_period' => MONITOR_TICK_PERIOD,
+@@ -225,6 +284,19 @@ sub slave_update {
+     }
+     $slave->update($msg->data);
+ 
++    for my $key ( keys %cumulative_stats ) {
++        next if ( !$msg->{$key} );
++        my $item = $slave->items($key);
++        if ( ( $key ne 'proc' ) && ( $key ne 'queue' ) ) {
++            $cumulative_stats{$key}->badd( $item->diff( count => 2 ) );
++        }
++        else {
++            my $prev = $item->prev();
++            $cumulative_stats{$key}->badd( $prev->total );
++            $cumulative_stats{ $key . '_cnt' }->badd( $prev->count );
++        }
++    }
++
+     # skip retirement checks for slavepong responses
+     return SLAVE_OK if ( exists $msg->{pid} );
+ 
+diff --git a/site_lib/Porta/StatItem.pm b/site_lib/Porta/StatItem.pm
+index e8f95a8..a1844bf 100644
+--- a/site_lib/Porta/StatItem.pm
++++ b/site_lib/Porta/StatItem.pm
+@@ -99,27 +99,25 @@ sub get {
+ }
+ 
+ sub diff {
+-    my $self = shift;
+-
+-    my %args  = @_;
+-    my $count = $args{count};
++    my ( $self, %args ) = @_;
+ 
+-    $count = 0 unless (defined($count)
+-        && $count >= 0
+-        && $count < $self->pointsCount() + 1);
++    my $last = $self->pointsGet(-1);
++    return 0 if ( !$last );
+ 
+-    my $first = $self->pointsGet(-1 * $count);
+-    my $last  = $self->pointsGet(-1);
++    my $first = $self->pointsGet( -1 * ( $args{count} || 0 ) );
+ 
+-    my $result;
+-    if (defined($first) && defined($last)) {
+-        $result = $last->value(last => 1) - $first->value(last => 1);
++    if ( !$first || ( $last == $first ) ) {
++        return 0;
+     }
+-    else {
+-        $result = 0;
++
++    $last = $last->value( last => 1 );
++    $first = $first->value( last => 1 );
++
++    if ( $last >= $first ) {
++        return $last - $first;
+     }
+ 
+-    return $result;
+-}
++    return $last;
++} ## end sub diff
+ 
+ 1;
