@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: monitoring
+data:
+  custom.ini: |-
+    [server]
+    protocol=http
+    
+    [security]
+    admin_user=admin
+    admin_password=admin
+    disable_gravatar=true
+
+    [analytics]
+    reporting_enabled=false
+
+    [metrics]
+    enabled=false
+
+    [snapshots]
+    external_enabled=false
+
+    [database]
+    path = /data/grafana.db
+
+    [paths]
+    data = /data
+    logs = /data/log
+    plugins = /data/plugins
+
+    [session]
+    provider = memory
+
+    [auth.basic]
+    enabled = false
+
+    [auth.anonymous]
+    enabled = true

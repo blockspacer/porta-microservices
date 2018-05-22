@@ -1,0 +1,57 @@
+apiVersion: apps/v1beta2
+kind: DaemonSet
+metadata:
+  labels:
+    app: porta-node-exporter
+  name: porta-node-exporter
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: porta-node-exporter
+  template:
+    metadata:
+      labels:
+        app: porta-node-exporter
+    spec:
+      containers:
+      - args:
+        - --web.listen-address=0.0.0.0:9101
+        ports:
+        - containerPort: 9101
+          name: http
+        image: maxkondr/porta-node-exporter
+        name: porta-node-exporter
+        resources:
+          limits:
+            cpu: 102m
+            memory: 180Mi
+          requests:
+            cpu: 102m
+            memory: 180Mi
+        volumeMounts:
+        - mountPath: /var/run/porta-one
+          name: run-porta-one
+          readOnly: true
+        - mountPath: /home/porta-radius
+          name: porta-radius-home
+          readOnly: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      nodeSelector:
+        kubernetes.io/role: pb-radius
+      serviceAccountName: node-exporter
+      hostNetwork: true
+      tolerations:
+      - effect: NoSchedule
+        key: dedicated
+        operator: "Equal"
+        value: "true"
+      volumes:
+      - hostPath:
+          path: /var/run/porta-one
+        name: run-porta-one
+      - hostPath:
+          path: /home/porta-radius
+        name: porta-radius-home
