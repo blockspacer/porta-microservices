@@ -1,0 +1,28 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/add-base-url: "true"
+    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/upstream-vhost: grafana.monitoring.svc.cluster.local
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      opentracing off;
+  name: grafana
+  namespace: monitoring
+spec:
+  tls:
+  - hosts:
+    - "yakut-laptop"
+    secretName: grafana-secret
+  rules:
+  - host: "yakut-laptop"
+    http:
+      paths:
+      - path: /monitor
+        backend:
+          serviceName: grafana
+          servicePort: http

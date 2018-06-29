@@ -1,0 +1,15 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: nginx-configuration
+  namespace: ingress-nginx
+  labels:
+    app: ingress-nginx
+data:
+  disable-ipv6: "true"
+  enable-vts-status: "true"
+  enable-opentracing: "true"
+  zipkin-collector-host: "zipkin.tracing.svc"
+  zipkin-collector-port: "9411"
+  zipkin-service-name: "ingress-nginx"
+  use-http2: "true"

@@ -1,0 +1,91 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: jaeger-collector
+  namespace: tracing
+  labels:
+    app: jaeger
+    jaeger-infra: collector-deployment
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: jaeger
+        jaeger-infra: collector-pod
+    spec:
+      containers:
+      - image: jaegertracing/jaeger-collector:1.5.0
+        name: jaeger-collector
+        command:
+          - "/go/bin/collector-linux"
+          - "--config-file=/conf/collector.yaml"
+        ports:
+        - containerPort: 14267
+          protocol: TCP
+        - containerPort: 14268
+          protocol: TCP
+        - containerPort: 9411
+          protocol: TCP
+        volumeMounts:
+        - name: jaeger-configuration-volume
+          mountPath: /conf
+        env:
+        - name: SPAN_STORAGE_TYPE
+          valueFrom:
+            configMapKeyRef:
+              name: jaeger-configuration
+              key: span-storage-type
+      volumes:
+        - configMap:
+            name: jaeger-configuration
+            items:
+              - key: collector
+                path: collector.yaml
+          name: jaeger-configuration-volume
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  namespace: tracing
+  labels:
+    app: jaeger
+    jaeger-infra: collector-service
+spec:
+  ports:
+  - name: jaeger-collector-tchannel
+    port: 14267
+    protocol: TCP
+    targetPort: 14267
+  - name: jaeger-collector-http
+    port: 14268
+    protocol: TCP
+    targetPort: 14268
+  - name: jaeger-collector-zipkin
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+  selector:
+    jaeger-infra: collector-pod
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zipkin
+  namespace: tracing
+  labels:
+    app: jaeger
+    jaeger-infra: zipkin-service
+spec:
+  ports:
+  - name: jaeger-collector-zipkin
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+  selector:
+    jaeger-infra: collector-pod
+  type: ClusterIP  

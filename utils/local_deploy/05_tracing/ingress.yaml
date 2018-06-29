@@ -1,0 +1,27 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/add-base-url: "true"
+    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/upstream-vhost: jaeger-query.tracing.svc.cluster.local
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      opentracing off;
+  name: jaeger
+  namespace: tracing
+spec:
+  tls:
+  - hosts:
+    - "yakut-laptop"
+    secretName: tracing-secret
+  rules:
+  - host: "yakut-laptop"
+    http:
+      paths:
+      - path: /tracing
+        backend:
+          serviceName: jaeger-query
+          servicePort: jaeger-query

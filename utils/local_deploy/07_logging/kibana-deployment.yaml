@@ -1,0 +1,38 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kibana
+  labels:
+    app: kibana
+    kubernetes.io/cluster-service: "true"
+  namespace: logging
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+      - name: kibana
+        image: docker.elastic.co/kibana/kibana-oss:6.2.2
+        ports:
+        - containerPort: 5601
+          name: kibana
+          protocol: TCP
+        terminationMessagePolicy: FallbackToLogsOnError
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+          requests:
+            cpu: 200m
+            memory: 1Gi
+        volumeMounts:
+        - name: kibana-config
+          mountPath: /usr/share/kibana/config
+      volumes:
+      - name: kibana-config
+        configMap:
+          name: kibana-config

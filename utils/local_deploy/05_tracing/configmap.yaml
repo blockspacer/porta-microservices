@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jaeger-configuration
+  namespace: tracing
+  labels:
+    app: jaeger
+    jaeger-infra: configuration
+data:
+  span-storage-type: elasticsearch
+  collector: |
+    es:
+      server-urls: http://elasticsearch-client.storage:9200
+    collector:
+      zipkin:
+        http-port: 9411
+  query: |
+    es:
+      server-urls: http://elasticsearch-client.storage:9200
+    query:
+      static-files: /go/jaeger-ui/
+      base-path: /tracing
+  agent: |
+    collector:
+      host-port: "jaeger-collector.tracing.svc:14267"

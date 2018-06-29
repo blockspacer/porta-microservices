@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-client
+  namespace: storage
+  labels:
+    component: elasticsearch
+    role: client
+spec:
+  type: ClusterIP
+  selector:
+    component: elasticsearch
+    role: client
+  ports:
+  - name: http
+    port: 9200
+    protocol: TCP

@@ -1,0 +1,65 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: jaeger-query
+  namespace: tracing
+  labels:
+    app: jaeger
+    jaeger-infra: query-deployment
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: jaeger
+        jaeger-infra: query-pod
+    spec:
+      containers:
+      - image: jaegertracing/jaeger-query:1.5.0
+        name: jaeger-query
+        command:
+          - "/go/bin/query-linux"
+          - "--config-file=/conf/query.yaml"
+        ports:
+        - containerPort: 16686
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: "/"
+            port: 16686
+        volumeMounts:
+        - name: jaeger-configuration-volume
+          mountPath: /conf
+        env:
+        - name: SPAN_STORAGE_TYPE
+          valueFrom:
+            configMapKeyRef:
+              name: jaeger-configuration
+              key: span-storage-type
+      volumes:
+        - configMap:
+            name: jaeger-configuration
+            items:
+              - key: query
+                path: query.yaml
+          name: jaeger-configuration-volume
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-query
+  namespace: tracing
+  labels:
+    app: jaeger
+    jaeger-infra: query-service
+spec:
+  ports:
+  - name: jaeger-query
+    port: 80
+    protocol: TCP
+    targetPort: 16686
+  selector:
+    jaeger-infra: query-pod
+  type: ClusterIP
