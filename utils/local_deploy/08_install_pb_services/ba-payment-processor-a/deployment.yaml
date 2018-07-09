@@ -1,0 +1,34 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ba-payment-processor-a
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ba-payment-processor-a
+  template:
+    metadata:
+      labels:
+        app: ba-payment-processor-a
+    spec:
+      containers:
+        - name: ba-payment-processor-a
+          image: maxkondr/ba-payment-processor-a
+          ports:
+          - name: grpc
+            containerPort: 7777
+          env:
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP

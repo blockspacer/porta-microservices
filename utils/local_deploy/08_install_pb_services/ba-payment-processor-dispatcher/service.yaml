@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ba-payment-processor-dispatcher
+  namespace: default
+spec:
+  type: ClusterIP
+  ports:
+  - name: grpc
+    port: 7770
+    targetPort: 7770
+    protocol: TCP
+  selector:
+    app: ba-payment-processor-dispatcher
