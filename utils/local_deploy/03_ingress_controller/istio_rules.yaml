@@ -1,5 +1,5 @@
-apiVersion: "networking.istio.io/v1alpha3"
-kind: "DestinationRule"
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
 metadata:
   name: "mtls-to-default-ns"
   namespace: "ingress-nginx"
@@ -7,4 +7,16 @@ spec:
   host: "*.default.svc.cluster.local"
   trafficPolicy:
     tls:
-      mode: ISTIO_MUTUAL    
+      mode: ISTIO_MUTUAL
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: "kubernetes-master"
+  namespace: "ingress-nginx"
+spec:
+  host: "kubernetes.default.svc.cluster.local"
+  trafficPolicy:
+    tls:
+      mode: DISABLE
+      

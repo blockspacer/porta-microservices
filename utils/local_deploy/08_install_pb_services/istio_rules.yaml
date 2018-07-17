@@ -1,5 +1,5 @@
 apiVersion: "authentication.istio.io/v1alpha1"
-kind: "Policy"
+kind: Policy
 metadata:
   name: "mtls-default"
   namespace: "default"
@@ -8,7 +8,7 @@ spec:
   - mtls:
 ---
 apiVersion: "networking.istio.io/v1alpha3"
-kind: "DestinationRule"
+kind: DestinationRule
 metadata:
   name: "mtls-to-default-ns"
   namespace: "default"
@@ -17,3 +17,14 @@ spec:
   trafficPolicy:
     tls:
       mode: ISTIO_MUTUAL  
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: "kubernetes-master"
+  namespace: "default"
+spec:
+  host: "kubernetes.default.svc.cluster.local"
+  trafficPolicy:
+    tls:
+      mode: DISABLE

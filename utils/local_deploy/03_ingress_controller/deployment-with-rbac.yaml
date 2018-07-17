@@ -28,7 +28,6 @@ spec:
             - --udp-services-configmap=$(POD_NAMESPACE)/udp-services
             - --annotations-prefix=nginx.ingress.kubernetes.io
             - --publish-service=$(POD_NAMESPACE)/ingress-nginx
-            - --v=8
           env:
             - name: POD_NAME
               valueFrom:
