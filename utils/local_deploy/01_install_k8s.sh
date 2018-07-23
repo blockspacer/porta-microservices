@@ -7,6 +7,7 @@ set -e
 K8S_CLUSTER_DNS_IPV4="10.3.0.10"
 K8S_SERVICE_NETWORK="10.3.0.0/21"
 K8S_POD_NETWORK="10.2.0.0/16"
+K8S_ADVERTISE_ADDR="10.1.0.1"
 # ================================================
 
 function install_prerequisites {
@@ -108,13 +109,14 @@ EOF
 }
 
 function setup_cluster {
-    kubeadm init --ignore-preflight-errors=swap --pod-network-cidr ${K8S_POD_NETWORK} --service-cidr ${K8S_SERVICE_NETWORK} --feature-gates CoreDNS=true --token-ttl=0
-    mkdir -p /home/porta-one/.kube
-    cp -f /etc/kubernetes/admin.conf /home/porta-one/.kube/config
-    kubectl scale --replicas=1 deploy/coredns -n kube-system
-    chown -R porta-one:staff /home/porta-one/.kube
+    kubeadm init --ignore-preflight-errors=swap --pod-network-cidr ${K8S_POD_NETWORK} --service-cidr ${K8S_SERVICE_NETWORK} --feature-gates CoreDNS=true --token-ttl=0 --apiserver-advertise-address ${K8S_ADVERTISE_ADDR}
+
+    mkdir -p /home/yakut/.kube
+    cp -f /etc/kubernetes/admin.conf /home/yakut/.kube/config
+    chown -R yakut:yakut /home/yakut/.kube
 
     kubectl taint nodes --all node-role.kubernetes.io/master-
+    kubectl scale --replicas=1 deploy/coredns -n kube-system
 }
 
 function setup_network_addon {
