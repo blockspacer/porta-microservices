@@ -23,12 +23,12 @@ data:
     [INPUT]
         Name              tail
         Tag               kube.*
-        Path              /var/log/containers/*.log
-        Exclude_Path      *weave-net*,*default-http-backend*,*node-exporter*,*fluent-bit*
+        Path              /var/log/containers/ba-*.log
+        Exclude_Path      *weave-net*,*default-http-backend*,*node-exporter*,*fluent-bit*,*prometheus*,*alertmanager*,*coredns*,*es-*,*etcd-*,*istio-*,*jaeger-*,*kibana-*
         Parser            docker
         DB                /var/log/flb_ingress.db
         Mem_Buf_Limit     5MB
-        Skip_Long_Lines   On
+        Skip_Long_Lines   Off
         Refresh_Interval  10
 
   filter-kubernetes.conf: |
